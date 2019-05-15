@@ -16,12 +16,15 @@
 #include <netdb.h>
 #include <netdb.h>
 #include <vector>
+#include "../Socket.h"
 
 using namespace std;
 
 class TCPClient
 {
 private:
+    Socket* socketClient;
+
     int sock;
     std::string address;
     int port;
@@ -29,11 +32,13 @@ private:
 
 public:
     TCPClient();
-    bool setup(string address, int port);
+    bool setup(string address, int listenPort);
     bool Send(string data);
-    string receive(int size = 4096);
+
     string read();
     void exit();
+
+    int getNewPort();
 };
 
 #endif

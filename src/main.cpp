@@ -87,7 +87,10 @@ int run_server(int cantArg, char *dirJson, int port, Logger* logger) {
         return -1;
     }
     if (serverThread->create()) {
-        tcpServer->receive();
+        while (tcpServer->running){
+            if(!tcpServer->maxNumberReached())
+                tcpServer->receive();
+        }
     }
     return 0;
 }
@@ -117,7 +120,7 @@ int run_client(int cantArg, char *dirJson, string host, int port, Logger* logger
         cout << "Failed to setup Client" << endl;
         return -1;
     }
-    //tcpClient->Send("Connection succesfull");
+    tcpClient->Send("Connection succesfull");
     /*while (1){
         string str = tcpClient.receive(17);
         cout << str <<  endl;
@@ -134,6 +137,11 @@ int run_client(int cantArg, char *dirJson, string host, int port, Logger* logger
     		cout << "NOT READY\n";
     	}
     }
+
+
+    tcpClient->Send("Im connected!\n");
+    msj = tcpClient->read();
+    cout << "Cliente numero:" + msj << endl;
 
     mcGame = new MCGame(config, ancho, alto, tcpClient);
     mcGame->camera = { 0, 0, ancho, alto };

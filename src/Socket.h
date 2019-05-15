@@ -12,6 +12,7 @@
 #include <cstring>
 #include "tools/logger/Logger.h"
 #include <arpa/inet.h>
+#include <sys/socket.h>
 
 class Socket
 {
@@ -31,6 +32,14 @@ public:
 	int get_fd();
 
 	void listenConnection(int maxConnections, Logger* logger);
+
+    bool connectTo(string adressToConnect, int portToConnect);
+
+    void shutdownSocket();
+
+    string receive(size_t length);
+
+    int acceptConnection();
 
 };
 

@@ -10,6 +10,8 @@
 const string ERROR = "ERROR";
 const string INFO = "INFO";
 const string DEBUG = "DEBUG";
+#define MAX_DATA_SIZE 9999
+
 
 Socket::Socket()
 {
@@ -63,4 +65,73 @@ void Socket::listenConnection(int maxConnections, Logger* logger)
 		cout << msgError << endl;
 		logger->log(msgError,ERROR);
 	}
+}
+
+bool Socket::connectTo(string adressToConnect, int portToConnect) {
+    struct sockaddr_in serverAddress;
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_addr.s_addr = inet_addr(adressToConnect.data());
+    serverAddress.sin_port = htons(portToConnect);
+    socklen_t serverSize = sizeof(serverAddress);
+
+    /*VERIFICACION DE ERRORES*/
+    if (connect(fd, (struct sockaddr *) &serverAddress, serverSize) < 0) {
+        string error = strerror(errno);
+        //cout << "Error al conectar con el servidor " << strerror(errno) << endl;
+        return false;
+    }
+    return true;
+}
+
+
+
+void Socket::shutdownSocket() {
+    int ret = shutdown(this->fd, SHUT_RDWR);
+    /*VERIFICACION DE ERRORES*/
+    if (ret < 0){
+        string error = strerror(errno);
+        //LOGGEER INFO
+        cout << "Error al cerrar conexion " << error << endl;
+    }
+}
+
+
+
+string Socket::receive(size_t length) {
+    bool socketShutDown = false;
+    string  message;
+    int totalRecived = 0;
+    char buffer[MAX_DATA_SIZE] = {0};
+    int lastQuantityReceived = 0;
+    while (totalRecived < length && !socketShutDown) {
+
+        lastQuantityReceived = recv(fd, buffer, length - totalRecived, 0);
+
+        if (lastQuantityReceived <= 0) {
+            message="none";
+            socketShutDown = true;
+        } else {
+            totalRecived += lastQuantityReceived;
+
+        }
+    }
+
+    if(lastQuantityReceived>0)
+        message = string(buffer);
+    return message;
+}
+
+int Socket::acceptConnection() {
+    int socketFD;
+    struct sockaddr_in clientAddress;
+    socklen_t clientSize =sizeof(clientAddress);
+    socketFD = accept(fd, (struct sockaddr *) &clientAddress, &clientSize);
+    if (socketFD < 0) {
+        string error = strerror(errno);
+
+        //cout << "Error al conectar con el cliente " << error << endl;
+
+        return -1;
+    }
+    return socketFD;
 }

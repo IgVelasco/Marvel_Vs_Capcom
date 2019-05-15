@@ -8,42 +8,49 @@ TCPClient::TCPClient() {
     sock = -1;
     port = 0;
     address = "";
+    socketClient = new Socket();
 }
 
-bool TCPClient::setup(string address, int port) {
-    if (sock == -1) {
-        sock = socket(AF_INET, SOCK_STREAM, 0);
-        if (sock == -1) {
-            cout << "Error al inicializar el socket" << endl;
-        }
-    }
-    /*   if (inet_addr(address.c_str()) == -1) {
-           struct hostent *he;
-           struct in_addr **addr_list;
-           if ((he = gethostbyname(address.c_str())) == NULL) {
-               herror("gethostbyname");
-               cout << "Failed to resolve hostname\n";
-               return false;
-           }
-           addr_list = (struct in_addr **) he->h_addr_list;
-           for (int i = 0; addr_list[i] != NULL; i++) {
-               server.sin_addr = *addr_list[i];
-               break;
-           }
-       } else {
-            server.sin_addr.s_addr = inet_addr(address.c_str());
-       }*/
-    server.sin_addr.s_addr = inet_addr(address.c_str());
-    server.sin_family = AF_INET;
-    server.sin_port = htons(port);
-    if (connect(sock, (struct sockaddr *) &server, sizeof(server)) < 0) {
-        perror("connect failed. Error");
-        return false;
-    }
-    return true;
+bool TCPClient::setup(string addressToConnect, int listenPort) {
+  Logger* logger = Logger::getInstance();
+  this->address = addressToConnect;
+  socketClient->create(logger);
+  if(!socketClient->connectTo(address, listenPort)){
+      //this failed
+      return false;
+  }
+  this->port= getNewPort();
+    socketClient->shutdownSocket();
+  while(!socketClient->connectTo(address,port)){
+      cout <<"Reintentando conexion"<<endl;
+      sleep (1);
+  }
+
+  cout << "Connection succesfull" << endl;
+
+
+  /*this->conectado = true;
+  this->empezarRecibir();
+  this->reconexion = true;*/
 }
+
+/*
+void TCPClient::empezarRecibir() {
+    this->threadRecibir.start();
+    this->threadEnviar.start();
+}
+
+void TCPClient::dejarRecibir() {
+    this->threadEnviar.join();
+    this->threadRecibir.join();
+
+}
+*/
+
 
 bool TCPClient::Send(string data) {
+
+    this->socketClient;
     if (sock != -1) {
         if (send(sock, data.c_str(), strlen(data.c_str()), 0) < 0) {
             cout << "Send failed : " << data << endl;
@@ -52,20 +59,6 @@ bool TCPClient::Send(string data) {
     } else
         return false;
     return true;
-}
-
-string TCPClient::receive(int size) {
-    char buffer[size];
-    memset(&buffer[0], 0, sizeof(buffer));
-
-    string reply;
-    if (recv(sock, buffer, size, 0) < 0) {
-        cout << "receive failed!" << endl;
-        return nullptr;
-    }
-    buffer[size - 1] = '\0';
-    reply = buffer;
-    return reply;
 }
 
 string TCPClient::read() {
@@ -83,4 +76,20 @@ string TCPClient::read() {
 
 void TCPClient::exit() {
     close(sock);
+}
+
+int TCPClient::getNewPort() {
+    /*Recibo 4 bytes en donde ya se que voy a recibir 4 bytes con el puerto nuevo*/
+    string puerto = socketClient->receive(4);
+    if (puerto == "0005") {
+        cout << "El servidor ya esta ocupado con su maxima capacidad" << endl;
+        return -1;
+    }
+    /*Cierro la conexion con el puerto del xml*/
+    cout << "El puerto recibido es: " << puerto << endl;
+
+    return stoi(puerto);
+
+
+
 }

@@ -20,19 +20,22 @@ bool ServerThread::create()
 
 void* ServerThread::loop()
 {
+/*    int i = 0;
 	pthread_detach(pthread_self());
 	    while (1)
 	    {
 	        string str = this->server->getMessage();
 	        if (!str.empty()) {
 	            cout << "Message:" << str << endl;
-	            this->server->Send("Connection ready");
+	            if(str == "Im connected!")
+	                server->Send(to_string(i++));
 	            if(str == "salir")
 	                break;
 	            this->server->clean();
 	        }
 	    }
 	    this->server->detach();
+*/
 
 }
 

@@ -10,13 +10,13 @@ const string ERROR = "ERROR";
 const string INFO = "INFO";
 const string DEBUG = "DEBUG";
 
-TCPServer::TCPServer()
-{
-	this->numberOfConnections = 0;
-	this->port = 0;
-	this->sockfd = 0;
-	this->newsockfd = 0;
-	this->serverSocket = new Socket();
+TCPServer::TCPServer() {
+    this->numberOfConnections = 0;
+    this->port = 0;
+    this->sockfd = 0;
+    this->listenSockFD = 0;
+    this->newsockfd = 0;
+    this->serverSocket = new Socket();
 }
 
 void *TCPServer::Task(void *arg) {
@@ -37,47 +37,57 @@ void *TCPServer::Task(void *arg) {
     return 0;
 }
 
-bool TCPServer::setup(int port, Logger* logger) {
+bool TCPServer::setup(int portToListen, Logger *logger) {
 
-	logger->log("Comienza a iniciarse el servidor", INFO);
-	logger->log("Se crea el socket de escucha del servidor", INFO);
+    logger->log("Comienza a iniciarse el servidor", INFO);
+    logger->log("Se crea el socket de escucha del servidor", INFO);
+    port = portToListen;
+    this->setSockfd(this->serverSocket->create(logger));
+    if(this->serverSocket->fd == -1)
+        return false;
+    listenSockFD = sockfd = serverSocket->fd;
 
-	this->setSockfd(this->serverSocket->create(logger));
+    string msgInfo = "El numero de puerto es: " + to_string(this->port);
+    logger->log(msgInfo, INFO);
 
-	string msgInfo = "El numero de puerto es: " + to_string(this->port);
-	logger->log(msgInfo, INFO);
+    if(!this->serverSocket->bindToAddress(port, logger))
+        return false;
 
-	this->serverSocket->bindToAddress(port,logger);
+    this->serverSocket->listenConnection(maxConnections, logger);
 
-	this->serverSocket->listenConnection(maxConnections,logger);
+    running = true;
 
-	return true;
+    return true;
 }
 
 string TCPServer::receive() {
+    Logger* logger = Logger::getInstance();
     string str;
-    while (1) {
-        socklen_t sosize = sizeof(clientAddress);
-        newsockfd = accept(this->serverSocket->get_fd(), (struct sockaddr *) &clientAddress, &sosize);
-        clientsSockets[numberOfConnections] = newsockfd;
-        numberOfConnections++;
+    serverSocket->listenConnection(MAXPLAYERS, logger);
+    if(this->numberOfConnections == MAXPLAYERS)
+        return NULL;
+    int fd = serverSocket->acceptConnection();
+    serverSocket->fd = fd;
+    int portToConnect = port;
 
-        if(numberOfConnections != MAXPLAYERS){
-        	char *msjNotReady = (char*) "NOT READY\n";
-        	for(int i = 0; i < numberOfConnections; i++){
-        		send(clientsSockets[i], msjNotReady, strlen(msjNotReady),0 );
-        	}
-        }
-        else{
-        	char *msjReady = (char*) "READY\n";
-        	for(int i = 0; i < numberOfConnections; i++){
-        		send(clientsSockets[i], msjReady, strlen(msjReady),0 );
-        	}
-        }
-        str = inet_ntoa(clientAddress.sin_addr);
-        cout << str;
-        //pthread_create(&serverThread, NULL, &Task, (void *) newsockfd);
+    Socket *newSock = new Socket();
+    newSock->create(logger);
+
+
+    while(!newSock->bindToAddress(portToConnect,logger)){
+        portToConnect++;
     }
+
+    this->sendMessage(to_string(portToConnect));
+    cout << portToConnect << endl;
+
+    newSock->listenConnection(MAXPLAYERS, logger);
+    int fdd = newSock->acceptConnection();
+    //Linea 244
+    newSock->fd = fdd;
+
+    shutdown(fd,SHUT_RDWR);
+
     return str;
 }
 
@@ -95,11 +105,18 @@ void TCPServer::clean() {
 }
 
 void TCPServer::detach() {
-    close(this->serverSocket->get_fd() );
+    close(this->serverSocket->get_fd());
     close(newsockfd);
 }
 
-void TCPServer::setSockfd(int sockfd)
-{
-	this->sockfd = sockfd;
+void TCPServer::setSockfd(int sockfd) {
+    this->sockfd = sockfd;
+}
+
+bool TCPServer::maxNumberReached() {
+    return numberOfConnections == MAXPLAYERS;
+}
+
+void TCPServer::sendMessage(string basicString) {
+
 }

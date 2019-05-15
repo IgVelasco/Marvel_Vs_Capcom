@@ -34,8 +34,9 @@ private:
 
 
 public:
+    bool running = false;
     Socket* serverSocket;
-    int sockfd, newsockfd, n, pid;
+    int listenSockFD,sockfd, newsockfd, n, pid;
     //struct sockaddr_in serverAddress; //sockadrr_in es para protocolo IPv4
     struct sockaddr_in clientAddress;
     pthread_t serverThread;
@@ -53,6 +54,9 @@ public:
     void setSockfd(int sockfd);
 
 
+    bool maxNumberReached();
+
+    void sendMessage(string basicString);
 };
 
 #endif
