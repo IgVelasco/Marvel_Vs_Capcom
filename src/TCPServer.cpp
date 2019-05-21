@@ -268,11 +268,13 @@ void TCPServer::runServer() {
     char character[9];
 
     int nclient = 0;
-    for (int i = 0; i < maxNumberOfPlayers ; ++i) {    // de 0 a 4  o de 0 a 2
-        for (int j = 0; j < charactersPerClient ; ++j) {  // si characters es 1 entra 1 vez
+    for (int i = 0; i < maxNumberOfPlayers ; i++) {    // de 0 a 4  o de 0 a 2
+        int nCharacter = 0;
+        for (int j = 0; j < charactersPerClient ; j++) {  // si characters es 1 entra 1 vez
             clientsSockets[nclient]->reciveData(character,9);
-            characters[i] = createServerCharacter(character, nclient);
-            characters[i]->makeBuilderStruct(&builders[i]);
+            characters[nCharacter] = createServerCharacter(character, nclient);
+            characters[nCharacter]->makeBuilderStruct(&builders[i]);
+            nCharacter++;
         }
             nclient++;
     }
