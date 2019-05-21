@@ -15,7 +15,6 @@ Constants constants;
 const int LEVEL_WIDTH = 3200;
 const int LEVEL_HEIGHT = 600;
 
-string TCPServer::Message;
 const int maxConnections = 4;
 const string ERROR = "ERROR";
 const string INFO = "INFO";
@@ -39,10 +38,11 @@ typedef struct {
 } info_for_thread_t;
 
 
-bool TCPServer::setup(int port, Logger *logger) {
+bool TCPServer::setup(int port, Logger *logger, int numberOfPlayers) {
+
+    this->maxNumberOfPlayers = numberOfPlayers;
 
     this->logger = logger;
-
     logger->log("Comienza a iniciarse el servidor", INFO);
     logger->log("Se crea el socket de escucha del servidor", INFO);
 
@@ -51,7 +51,7 @@ bool TCPServer::setup(int port, Logger *logger) {
     cout << msgInfo << endl;
     logger->log(msgInfo, INFO);
 
-    bool ret = this->serverSocket->initialize(logger, port, maxConnections);
+    bool ret = this->serverSocket->initialize(logger, port, maxNumberOfPlayers);
 
     for (auto &clientsSocket : clientsSockets) {
         Socket *sock = new Socket();
@@ -62,9 +62,8 @@ bool TCPServer::setup(int port, Logger *logger) {
 
 
     for (int i = 0; i < MAXPLAYERS; ++i) {
-        this->character_updater_queue[i] = new Queue<character_updater_t *>;
+        this->client_updater_queue[i] = new Queue<character_updater_t *>;
     }
-    //this->setSockfd(this->serverSocket->get_fd());
 
     return ret;
 }
@@ -86,7 +85,7 @@ void TCPServer::receive() {
 
 
         //Rechazar conexiones
-        if (numberOfConnections == MAXPLAYERS) {
+        if (numberOfConnections == maxNumberOfPlayers) {
 
             to_send.nconnections = numberOfConnections;
             to_send.status = NO_MORE_CONNECTIONS_ALLOWED;
@@ -100,7 +99,7 @@ void TCPServer::receive() {
         numberOfConnections++;
 
         //Aceptar conexiones pero seguir esperando por mas
-        if (numberOfConnections != MAXPLAYERS) {
+        if (numberOfConnections != maxNumberOfPlayers) {
 
             to_send.status = NOT_READY;
             to_send.nconnections = numberOfConnections;
@@ -127,10 +126,6 @@ void TCPServer::receive() {
     }
 }
 
-void TCPServer::clean() {
-    Message = "";
-    memset(msg, 0, MAXPACKETSIZE);
-}
 
 void TCPServer::detach() {
     close(this->serverSocket->get_fd());
@@ -250,11 +245,11 @@ void TCPServer::sendToClient(int clientSocket) {
     while (1) {
 
         character_updater_t *updater;
-        if(character_updater_queue[clientSocket]->empty_queue())
+        if(client_updater_queue[clientSocket]->empty_queue())
             continue;
-        updater = character_updater_queue[clientSocket]->get_data();
+        updater = client_updater_queue[clientSocket]->get_data();
         socket->sendData(updater, sizeof(character_updater_t));
-        character_updater_queue[clientSocket]->delete_data();
+        client_updater_queue[clientSocket]->delete_data();
     }
 }
 
@@ -266,6 +261,14 @@ void TCPServer::runServer() {
         continue;
 
     cout << "Numero de jugadores alcanzado! \n";
+
+    int charactersPerClient;
+
+    if(2 == maxNumberOfPlayers)
+        charactersPerClient = 2;
+    else
+        charactersPerClient = 1;
+
 
 
     char character[9];
@@ -365,7 +368,7 @@ void TCPServer::runServer() {
 
         for (int i = 0; i < MAXPLAYERS; ++i) {
             std::unique_lock<std::mutex> lock(m);
-            this->character_updater_queue[i]->insert(update[i]);
+            this->client_updater_queue[i]->insert(update[i]);
         }
 
         incoming_msges_queue->delete_data();

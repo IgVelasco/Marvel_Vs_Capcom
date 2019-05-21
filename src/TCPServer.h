@@ -36,6 +36,7 @@ private:
 	Team* team1;
 	Team* team2;
     int numberOfConnections;
+    int maxNumberOfPlayers;
     int port;
     Socket* clientsSockets[MAXPLAYERS];
     Logger* logger;
@@ -51,7 +52,7 @@ private:
 public:
     Queue<incoming_msg_t*>* incoming_msges_queue; //cola de los mensajes entrantes del cliente
 
-    Queue<character_updater_t*>* character_updater_queue[MAXPLAYERS];
+    Queue<character_updater_t*>* client_updater_queue[MAXPLAYERS];
     				//colas de mensajes de escritura para cada cliente
 
     Socket* serverSocket;
@@ -64,7 +65,7 @@ public:
     static string Message;
 
     TCPServer();
-    bool setup(int port, Logger* logger);
+    bool setup(int port, Logger *logger, int numberOfPlayers);
     void receive();
 
     void detach();
