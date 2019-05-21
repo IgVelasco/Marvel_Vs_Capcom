@@ -190,15 +190,11 @@ int computeDistance2(CharacterServer *character1, CharacterServer *character2)
 void TCPServer::receiveFromClient(int clientSocket) {
 
 
-    //Recibo los argumentos y los casteo en el orden que corresponde.
     pthread_mutex_lock(&mtx);
     Socket *socket = getClientSocket(clientSocket);
     pthread_mutex_unlock(&mtx);
 
     char buf[sizeof(actions_t)];
-
-    /*cout << "Hola! Soy el hilo: " + to_string(hilo) + ". Soy el encargado de leer del socket: "
-    + to_string(socket_to_read->fd) + " y el mensaje que recibo es: "+ accion +"\n";*/
 
     while (1) {
 
@@ -211,8 +207,6 @@ void TCPServer::receiveFromClient(int clientSocket) {
         msgQueue->action = *accion;
         msgQueue->client = clientSocket;
         this->incoming_msges_queue->insert(msgQueue);
-
-        continue;
     }
 }
 
@@ -241,7 +235,6 @@ void TCPServer::sendToClient(int clientSocket) {
 
     //character_updater_t updater;
 
-    int i = 0;
     while (1) {
 
         character_updater_t *updater;
@@ -257,66 +250,42 @@ void TCPServer::sendToClient(int clientSocket) {
 void TCPServer::runServer() {
 
     std::thread receive(&TCPServer::receive, this);
-    while (getNumberOfConections() != MAXPLAYERS)    //Espera hasta que se conecten MAXPLAYERS
+    while (getNumberOfConections() != maxNumberOfPlayers)    //Espera hasta que se conecten MAXPLAYERS
         continue;
 
     cout << "Numero de jugadores alcanzado! \n";
 
     int charactersPerClient;
 
-    if(2 == maxNumberOfPlayers)
+    if(2 == maxNumberOfPlayers)   // si el maximo de players es 2 elijen 2
         charactersPerClient = 2;
     else
         charactersPerClient = 1;
 
-
+    CharacterServer* characters[MAXPLAYERS];
+    character_builder_t builders[MAXPLAYERS];
 
     char character[9];
-    character_builder_t builder1;
-    character_builder_t builder2;
-    character_builder_t builder3;
-    character_builder_t builder4;
 
-    clientsSockets[0]->reciveData(character, 9);
-    CharacterServer *character1 = createServerCharacter(character, 1);
-    character1->makeBuilderStruct(&builder1);
+    int nclient = 0;
+    for (int i = 0; i < maxNumberOfPlayers ; ++i) {    // de 0 a 4  o de 0 a 2
+        for (int j = 0; j < charactersPerClient ; ++j) {  // si characters es 1 entra 1 vez
+            clientsSockets[nclient]->reciveData(character,9);
+            characters[i] = createServerCharacter(character, nclient);
+            characters[i]->makeBuilderStruct(&builders[i]);
+        }
+            nclient++;
+    }
 
-    cout << character << endl;
-
-
-    clientsSockets[0]->reciveData(character, 9);
-    CharacterServer *character2 = createServerCharacter(character, 1);
-    character2->makeBuilderStruct(&builder2);
-    cout << character << endl;
+    team1 = new Team(characters[0], characters[1], 1, 1);
+    team2 = new Team(characters[2], characters[3], 1, 2);
 
 
-    clientsSockets[1]->reciveData(character, 9);
-    CharacterServer *character3 = createServerCharacter(character, 2);
-    character3->makeBuilderStruct(&builder3);
-
-    cout << character << endl;
-
-    clientsSockets[1]->reciveData(character, 9);
-    CharacterServer *character4 = createServerCharacter(character, 2);
-    character4->makeBuilderStruct(&builder4);
-
-    cout << character << endl;
-
-    team1 = new Team(character1, character2, 1, 1);
-    team2 = new Team(character3, character4, 1, 2);
-
-
-    clientsSockets[0]->sendData(&builder1, sizeof(character_builder_t));
-    clientsSockets[0]->sendData(&builder2, sizeof(character_builder_t));
-    clientsSockets[0]->sendData(&builder3, sizeof(character_builder_t));
-    clientsSockets[0]->sendData(&builder4, sizeof(character_builder_t));
-
-    clientsSockets[1]->sendData(&builder1, sizeof(character_builder_t));
-    clientsSockets[1]->sendData(&builder2, sizeof(character_builder_t));
-    clientsSockets[1]->sendData(&builder3, sizeof(character_builder_t));
-    clientsSockets[1]->sendData(&builder4, sizeof(character_builder_t));
-
-
+    for (auto & builder : builders) {
+        for (int i = 0; i < maxNumberOfPlayers ; ++i) {
+            clientsSockets[i]->sendData(&builder, sizeof(character_builder_t));
+        }
+    }
 
     std::thread receive1(&TCPServer::receiveFromClient, this, 0);
     std::thread receive2(&TCPServer::receiveFromClient, this, 1);
@@ -324,65 +293,7 @@ void TCPServer::runServer() {
     std::thread send1(&TCPServer::sendToClient, this, 0);
     std::thread send2(&TCPServer::sendToClient, this, 1);
 
-    while (1) {
-        incoming_msg_t *incoming_msg;
-        if(incoming_msges_queue->empty_queue())
-            continue;
-        incoming_msg = this->incoming_msges_queue->get_data();
-
-        int distancia = computeDistance(team1->get_currentCharacter(), team2->get_currentCharacter());
-
-        int distancia2 = computeDistance2(team1->get_currentCharacter(),team2->get_currentCharacter());
-
-        character_updater_t *update_msg = new character_updater_t;
-
-        bool changeAvailable = false;
-
-        if (incoming_msg->client == 0)//team1 es de los clientes 1 y 2
-        {
-            if(team1->get_currentCharacter()->currentAction == STANDING && incoming_msg->action == CHANGEME) {
-                update_msg->action = CHANGEME;
-                team1->update(distancia, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
-
-            }else{
-                team1->update(distancia, team2->get_currentCharacter()->getPosX(), incoming_msg->action);
-                update_msg->action = team1->get_currentCharacter()->getCurrentAction();
-            }
-            update_msg->posX = team1->get_currentCharacter()->getPosX();
-            update_msg->posY = team1->get_currentCharacter()->getPosY();
-            update_msg->team = 1;
-            update_msg->currentSprite = team1->get_currentCharacter()->getSpriteNumber();
-        } else {
-            if(team2->get_currentCharacter()->currentAction == STANDING && incoming_msg->action == CHANGEME){
-                update_msg->action = CHANGEME;
-                team2->update(distancia, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
-            }else{
-                team2->update(distancia, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
-                update_msg->action = team2->get_currentCharacter()->getCurrentAction();
-            }
-            update_msg->posX = team2->get_currentCharacter()->getPosX();
-            update_msg->posY = team2->get_currentCharacter()->getPosY();
-            update_msg->team = 2;
-            update_msg->currentSprite = team2->get_currentCharacter()->getSpriteNumber();
-        }
-
-        character_updater_t* update[MAXPLAYERS];
-        for (int j = 0; j < MAXPLAYERS; ++j) {
-            update[j] = new character_updater_t;
-            update[j]->action = update_msg->action;
-            update[j]->team = update_msg->team;
-            update[j]->posX = update_msg->posX;
-            update[j]->posY = update_msg->posY;
-            update[j]->currentSprite = update_msg->currentSprite;
-        }
-
-        for (int i = 0; i < MAXPLAYERS; ++i) {
-            std::unique_lock<std::mutex> lock(m);
-            this->client_updater_queue[i]->insert(update[i]);
-        }
-
-        incoming_msges_queue->delete_data();
-    }
+    updateModel();
 
 }
 
@@ -500,6 +411,67 @@ void TCPServer::configJson(json config) {
     constants.screenHeight = config["window"]["height"];
 
     logger->log("Creacion de personajes.", DEBUG);
+
+}
+
+void TCPServer::updateModel() {
+    while (1) {
+        incoming_msg_t *incoming_msg;
+        if(incoming_msges_queue->empty_queue())
+            continue;
+        incoming_msg = this->incoming_msges_queue->get_data();
+
+        int distancia = computeDistance(team1->get_currentCharacter(), team2->get_currentCharacter());
+
+        int distancia2 = computeDistance2(team1->get_currentCharacter(),team2->get_currentCharacter());
+
+        character_updater_t *update_msg = new character_updater_t;
+
+        if (incoming_msg->client == 0)//team1 es de los clientes 1 y 2
+        {
+            if(team1->get_currentCharacter()->currentAction == STANDING && incoming_msg->action == CHANGEME) {
+                update_msg->action = CHANGEME;
+                team1->update(distancia, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
+
+            }else{
+                team1->update(distancia, team2->get_currentCharacter()->getPosX(), incoming_msg->action);
+                update_msg->action = team1->get_currentCharacter()->getCurrentAction();
+            }
+            update_msg->posX = team1->get_currentCharacter()->getPosX();
+            update_msg->posY = team1->get_currentCharacter()->getPosY();
+            update_msg->team = 1;
+            update_msg->currentSprite = team1->get_currentCharacter()->getSpriteNumber();
+        } else {
+            if(team2->get_currentCharacter()->currentAction == STANDING && incoming_msg->action == CHANGEME){
+                update_msg->action = CHANGEME;
+                team2->update(distancia2, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
+            }else{
+                team2->update(distancia2, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
+                update_msg->action = team2->get_currentCharacter()->getCurrentAction();
+            }
+            update_msg->posX = team2->get_currentCharacter()->getPosX();
+            update_msg->posY = team2->get_currentCharacter()->getPosY();
+            update_msg->team = 2;
+            update_msg->currentSprite = team2->get_currentCharacter()->getSpriteNumber();
+        }
+
+        character_updater_t* update[MAXPLAYERS];
+        for (int j = 0; j < MAXPLAYERS; ++j) {
+            update[j] = new character_updater_t;
+            update[j]->action = update_msg->action;
+            update[j]->team = update_msg->team;
+            update[j]->posX = update_msg->posX;
+            update[j]->posY = update_msg->posY;
+            update[j]->currentSprite = update_msg->currentSprite;
+        }
+
+        for (int i = 0; i < MAXPLAYERS; ++i) {
+            std::unique_lock<std::mutex> lock(m);
+            this->client_updater_queue[i]->insert(update[i]);
+        }
+
+        incoming_msges_queue->delete_data();
+    }
 
 }
 

@@ -28,7 +28,7 @@
 using namespace std;
 
 #define MAXPACKETSIZE 4096
-#define MAXPLAYERS 2
+#define MAXPLAYERS 4
 
 class TCPServer
 {
@@ -86,6 +86,8 @@ public:
     void sendToClient(int clientSocket);
 
     Socket *getClientSocket(int i);
+
+    void updateModel();
 };
 
 #endif
