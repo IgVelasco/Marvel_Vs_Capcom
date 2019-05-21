@@ -31,6 +31,7 @@ typedef struct{
     character_number_t personaje;
     int sprite;
     actions_t action;
+    bool isFirstTeam;
 } character_builder_t;
 
 typedef struct{

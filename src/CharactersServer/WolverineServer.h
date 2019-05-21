@@ -10,7 +10,7 @@
 class WolverineServer final : public CharacterServer {
 public:
     WolverineServer(int PosX, bool secondaryColor, int width, int height, int sobrante, int ancho, int anchoPantalla, int numberOfClient);
-    void makeBuilderStruct(character_builder_t* builder);
+    void makeBuilderStruct(character_builder_t *builder, bool firstTeam);
 
 private:
     void moveRight(int distance, int posContrincante);

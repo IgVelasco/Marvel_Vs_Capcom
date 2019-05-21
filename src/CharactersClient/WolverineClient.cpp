@@ -26,7 +26,7 @@ WolverineClient::WolverineClient(int PosX, bool secondaryColor, int width, int h
         false,
         width,
         height,
-        anchoPantalla, numberOfClient) {
+        anchoPantalla) {
     if(secondaryColor)
         this->loader = new ImageLoader((Uint8)SECONDARY_RED, (Uint8)SECONDARY_GREEN,(Uint8) SECONDARY_BLUE);
     else

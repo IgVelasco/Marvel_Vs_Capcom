@@ -74,12 +74,13 @@ void SpidermanServer::resetSpriteVariables(){
 	return;
 }
 
-void SpidermanServer::makeBuilderStruct(character_builder_t* builder){
+void SpidermanServer::makeBuilderStruct(character_builder_t *builder, bool firstTeam) {
 	//Completar
 	builder->personaje = SPIDERMAN;
 	builder->cliente = clientNumber;
 	builder->sprite = 0;
 	builder->action = STANDING;
+	builder->isFirstTeam = firstTeam;
 
 }
 

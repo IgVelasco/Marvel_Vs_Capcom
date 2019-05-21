@@ -77,7 +77,7 @@ public:
 
     void runServer();
 
-    CharacterServer* createServerCharacter(char *character, int nclient);
+    CharacterServer* createServerCharacter(char *character, int nclient, int characterNumber);
 
     void configJson(json config);
 

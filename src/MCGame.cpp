@@ -357,42 +357,29 @@ void MCGame::update() {
 }
 
 CharacterClient *MCGame::characterBuild(character_builder_t *builder) {
-   CharacterClient* characterClient = nullptr;
+    CharacterClient *characterClient = nullptr;
 
+    int pos;
+    if (builder->isFirstTeam)
+        pos = constants->INITIAL_POS_X_PLAYER_ONE;
+    else
+        pos = constants->INITIAL_POS_X_PLAYER_TWO;
 
    switch(builder->personaje){
         case SPIDERMAN:
-            if(builder->cliente < 2)
                 characterClient = new SpidermanClient(constants->INITIAL_POS_X_PLAYER_ONE,
-                                                      false,
+                                                      !builder->isFirstTeam,
                                                       constants->widthSpiderman,
                                                       constants->heightSpiderman,
                                                       constants->spidermanSobrante,
                                                       constants->spidermanAncho,
-                                                      constants->screenWidth, builder->cliente);
-            else
-                characterClient = new SpidermanClient(constants->INITIAL_POS_X_PLAYER_TWO,
-                                                      true,
-                                                      constants->widthSpiderman,
-                                                      constants->heightSpiderman,
-                                                      constants->spidermanSobrante,
-                                                      constants->spidermanAncho,
-                                                      constants->screenWidth, builder->cliente);
+                                                      constants->screenWidth);
             characterClient->setZIndex(constants->zIndexSpiderman);
             break;
 
         case WOLVERINE:
-            if(builder->cliente < 2)
                 characterClient = new WolverineClient(constants->INITIAL_POS_X_PLAYER_ONE,
-                                                      false,
-                                                      constants->widthWolverine,
-                                                      constants->heightWolverine,
-                                                      constants->wolverineSobrante,
-                                                      constants->wolverineAncho,
-                                                      constants->screenWidth, builder->cliente);
-            else
-                characterClient = new WolverineClient(constants->INITIAL_POS_X_PLAYER_ONE,
-                                                      true,
+                                                      !builder->isFirstTeam,
                                                       constants->widthWolverine,
                                                       constants->heightWolverine,
                                                       constants->wolverineSobrante,
