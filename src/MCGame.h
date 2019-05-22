@@ -54,6 +54,8 @@ private:
     void loadGroundTextureByZIndex();
     Constants* constants = (Constants*) (malloc(sizeof(Constants *)));
     int numberTeam;
+    void action_update_menu();
+    bool threadRunning;
 
 
 protected:

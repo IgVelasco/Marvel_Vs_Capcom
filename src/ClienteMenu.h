@@ -1,20 +1,21 @@
 /*
- * clienteMenu.h
+ * ClienteMenu.h
  *
- *  Created on: 20 may. 2019
+ *  Created on: 21 may. 2019
  *      Author: german
  */
 
 #ifndef CLIENTEMENU_H_
 #define CLIENTEMENU_H_
 
+
 #include "./Texture/Texture.h"
 
-class clienteMenu {
+class ClienteMenu {
 public:
 
 
-	clienteMenu(int posX, int team);
+	ClienteMenu(int posX, int team);
     void free();
 
     void load(SDL_Renderer* renderer, string path);
@@ -31,7 +32,6 @@ private:
 
     Texture m_Texture;
 };
-
 
 
 #endif /* CLIENTEMENU_H_ */

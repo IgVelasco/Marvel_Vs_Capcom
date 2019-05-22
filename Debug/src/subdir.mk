@@ -4,6 +4,7 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
+../src/ClienteMenu.cpp \
 ../src/ClientsThread.cpp \
 ../src/InputManager.cpp \
 ../src/Layer.cpp \
@@ -17,6 +18,7 @@ CPP_SRCS += \
 ../src/main.cpp 
 
 OBJS += \
+./src/ClienteMenu.o \
 ./src/ClientsThread.o \
 ./src/InputManager.o \
 ./src/Layer.o \
@@ -30,6 +32,7 @@ OBJS += \
 ./src/main.o 
 
 CPP_DEPS += \
+./src/ClienteMenu.d \
 ./src/ClientsThread.d \
 ./src/InputManager.d \
 ./src/Layer.d \
@@ -47,7 +50,7 @@ CPP_DEPS += \
 src/%.o: ../src/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C++ Compiler'
-	g++ -O0 -g3 -Wall -c -fmessage-length=0 -pthread -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
+	g++ -O0 -g3 -Wall -c -fmessage-length=0 -pthread -std=c++11 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 

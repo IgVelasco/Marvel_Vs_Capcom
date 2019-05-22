@@ -6,7 +6,8 @@
 #include "Controls/WASDControls.h"
 #include "Controls/ArrowControls.h"
 #include <queue>
-#include "clienteMenu.h"
+#include "ClienteMenu.h"
+#include <thread>
 
 
 using namespace std;
@@ -209,6 +210,8 @@ void MCGame::run() {
 	FPSManager fpsManager(SCREEN_FPS);
 
 	logger->log("Inicio de Bucle MCGame-run.", DEBUG);
+
+	menu();
 
 
 	//Se encarga de mandar al server los estados del personaje
@@ -519,11 +522,9 @@ void MCGame::updateNuevo(render_data_t* render_data)
 }
 
 
-/*Por ahora considero que se conectan 4 clientes (luego voy a considerar cuando se
- * conectan 2 o 3.
- * Es solo un boceto, ahora quito los booleanos y veo bien los datos a enviar al server*/
+
 void MCGame::menu() {
-	/* Posiblemente innecesario
+	/* Posiblemente ya no lo use
 	 * int numeroDeClientes; //Esto despues vuela
 	switch(tcpClient->nclient)
 	{
@@ -542,36 +543,22 @@ void MCGame::menu() {
 	}*/
 
 
+	//std::thread send (&MCGame::action_update_menu, this);
+
+
 	bool terminar = false; //sto despues vuela (El servidor envia terminar cuando los dos team se bloquean (quedaron seleccionados todos los personajes)
-	bool eligioASpiderman = true;
 	bool teamBloqueado = false; //Esto despues vuela (es lo que voy a recibir del server)
 	menuTexture.loadFromFile("images/menu/menu.png", m_Renderer);
-	clienteMenu* cliente1 = new clienteMenu(97, 1);
-	clienteMenu* cliente2 = new clienteMenu(449, 1);
-	clienteMenu* cliente3 = new clienteMenu(97, 2);
-	clienteMenu* cliente4 = new clienteMenu(449, 2);
+	ClienteMenu* cliente1 = new ClienteMenu(97, 1);
+	ClienteMenu* cliente2 = new ClienteMenu(449, 1);
+	ClienteMenu* cliente3 = new ClienteMenu(97, 2);
+	ClienteMenu* cliente4 = new ClienteMenu(449, 2);
 	cliente1->load(m_Renderer,"images/menu/cliente1.png");
 	cliente2->load(m_Renderer,"images/menu/cliente2.png");
 	cliente3->load(m_Renderer,"images/menu/cliente3.png");
 	cliente4->load(m_Renderer,"images/menu/cliente4.png");
 	while (!terminar){
-		InputManager* inputManager = InputManager::getInstance();
-		inputManager->update();
-		if (inputManager->isKeyDown(KEY_RIGHT)){
-			//tcpClient->socketClient->sendData(&accion, sizeof(accion));	ARREGLAR
-			eligioASpiderman = false;
-		}
-		if (inputManager->isKeyDown(KEY_LEFT)){
-			//tcpClient->socketClient->sendData(&accion, sizeof(accion));	ARREGLAR
-			eligioASpiderman = true;
-		}
-		if (inputManager->isKeyDown(KEY_RETURN)){
-			//tcpClient->socketClient->sendData(&accion, sizeof(accion));	ARREGLAR
-		}
-		if(inputManager->quitRequested()) {
-			terminar = true;
-			m_Running = false;
-		}
+
 		//recibo la posicion en x de todos los clientes, si se bloqueo el equipo y si debo terminar 	ARREGLAR
 		//tcpClient->socketClient->reciveData(m_d, sizeof(menu_data));
 		//tcpClient->socketClient->reciveData(m_d, sizeof(menu_data));
@@ -587,30 +574,56 @@ void MCGame::menu() {
 		cliente3->render(m_Renderer,posX);
 		cliente4->render(m_Renderer,posX);*/
 		SDL_RenderPresent(m_Renderer);
-		}
+	}
 
-		/*Esto ahora se encuentra en MCGame::MCGame(). Si llegase a funcionar se
-		 * deberia quitar de ahi*/
-		char* character1;
-		char* character2;
-		if (eligioASpiderman){
-			character1 = "Spiderman";
-			character2 = "Wolverine";
-		} else {
-			character1 = "Wolverine";
-			character2 = "Spiderman";
-		}
-		/*Aprovecho que cuando elige un cliente, el otro cliente ya queda determinado,
-		 * entonces un cliente de un equipo hace dos send y el otro cliente del mismo
-		 * equipo no envia nada*/
-		if (!teamBloqueado){
-			tcpClient->Send((void*) character1, sizeof(character1) + 1);
-			tcpClient->Send((void*) character2, sizeof(character2) + 1);
-		}
+	/*Esto ahora se encuentra en MCGame::MCGame(). Si llegase a funcionar se
+	* deberia quitar de ahi*/
+	char* personajeSeleccionado; //esto va a ser lo que recibo del server
+	char* character1;
+	char* character2;
+	if (personajeSeleccionado == "Spiderman"){
+		character1 = "Spiderman";
+		character2 = "Wolverine";
+	} else {
+		character1 = "Wolverine";
+		character2 = "Spiderman";
+	}
+	/*Aprovecho que cuando elige un cliente, el otro cliente ya queda determinado,
+	* entonces un cliente de un equipo hace dos send y el otro cliente del mismo
+	* equipo no envia nada*/
+	if (!teamBloqueado){
+		tcpClient->Send((void*) character1, sizeof(character1) + 1);
+		tcpClient->Send((void*) character2, sizeof(character2) + 1);
+	}
 
 }
 
 
+void MCGame::action_update_menu() {
+	bool terminar = false;
+	//Tengo que ver bien como salgo de este ciclo
+	while (!terminar){
+    	InputManager* inputManager = InputManager::getInstance();
+    	inputManager->update();
+    	if (inputManager->isKeyDown(KEY_RIGHT)){
+    		accion_t accion = RIGHT;
+    		tcpClient->socketClient->sendData(&accion, sizeof(accion));
+    	}
+    	if (inputManager->isKeyDown(KEY_LEFT)){
+    		accion_t accion = LEFT;
+    		tcpClient->socketClient->sendData(&accion, sizeof(accion));
+    	}
+    	if (inputManager->isKeyDown(KEY_RETURN)){
+    		accion_t accion = ENTER;
+    		tcpClient->socketClient->sendData(&accion, sizeof(accion));
+    	}
+    	if(inputManager->quitRequested()) {
+    		terminar = true;
+    		m_Running = false;
+    	}
 
+    }
+    //std::unique_lock<std::mutex> lock(m);
+}
 
 

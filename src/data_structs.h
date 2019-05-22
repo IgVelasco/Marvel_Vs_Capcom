@@ -71,6 +71,7 @@ typedef struct
 	int posX;
 	bool terminar; //el server enevia true si los dos equipos terminaron de elegir
 	bool teamBloqueado; //true si tu compañero de equipo ya eligió
+	char* personajeSeleccionado;
 }menu_data;
 
 
