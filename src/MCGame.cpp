@@ -174,11 +174,17 @@ MCGame::MCGame(json config, int ancho, int alto, TCPClient *client) {
      else
          tcpClient->Send((void*) character2, sizeof(character2) + 1);
 
+
+     if(tcpClient->nclient <= 2)
+         team = 0;
+     else
+         team = 1;
+
    // tcpClient->Send((void*) character1, sizeof(character1) + 1);
     //tcpClient->Send((void*) character2, sizeof(character2) + 1);
 
     //MENU
-
+    isSending = (tcpClient->nclient == 1 || tcpClient->nclient == 3);
 
     //Construyo los 4 personajes según la configuracion que me mande el server.
 
@@ -236,6 +242,8 @@ void MCGame::action_update() {
         handleEvents();
         if(!threadRunning)
             break;
+        if(isNotActive())
+            continue;
         actions_t actionToSend = clientControls->getNewAction();
         tcpClient->socketClient->sendData(&actionToSend, sizeof(actionToSend));
         fpsManager.stop();
@@ -350,11 +358,11 @@ void MCGame::update() {
     character_updater_t* updater = (character_updater_t*) buf1;
 
     if(updater->team == 1) {
-            players[0]->update(updater);
+        players[0]->update(updater, &isSending, 0 == team);
             players[0]->load(m_Renderer, players[1]->getCentro());
         }
     else{
-            players[1]->update(updater);
+        players[1]->update(updater, &isSending, 1 == team);
             players[1]->load(m_Renderer, players[0]->getCentro());
         }
 
@@ -373,7 +381,7 @@ CharacterClient *MCGame::characterBuild(character_builder_t *builder) {
 
    switch(builder->personaje){
         case SPIDERMAN:
-                characterClient = new SpidermanClient(constants->INITIAL_POS_X_PLAYER_ONE,
+                characterClient = new SpidermanClient(pos,
                                                       !builder->isFirstTeam,
                                                       constants->widthSpiderman,
                                                       constants->heightSpiderman,
@@ -384,7 +392,7 @@ CharacterClient *MCGame::characterBuild(character_builder_t *builder) {
             break;
 
         case WOLVERINE:
-                characterClient = new WolverineClient(constants->INITIAL_POS_X_PLAYER_ONE,
+                characterClient = new WolverineClient(pos,
                                                       !builder->isFirstTeam,
                                                       constants->widthWolverine,
                                                       constants->heightWolverine,
@@ -394,6 +402,11 @@ CharacterClient *MCGame::characterBuild(character_builder_t *builder) {
             characterClient->setZIndex(constants->zIndexWolverine);
     }
     return characterClient;
+}
+
+bool MCGame::isNotActive() {
+    std::unique_lock<std::mutex> lock(m);
+    return !isSending;
 }
 
 

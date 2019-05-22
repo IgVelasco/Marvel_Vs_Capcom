@@ -19,10 +19,14 @@ Player::Player(CharacterClient *first, CharacterClient *second) {
 }
 
 
-void Player::update(character_updater_t* updater) {
+void Player::update(character_updater_t *updater, bool *isSending, bool b) {
 
 
     if(updater->action == CHANGEME){
+        m.lock();
+        if(b)
+            *isSending = !(*isSending);
+        m.unlock();
         changeCharacter();  //send change character
         setCharacterToChanging();
         isChanging = true;

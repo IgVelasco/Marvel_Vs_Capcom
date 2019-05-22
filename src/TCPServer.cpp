@@ -58,7 +58,7 @@ bool TCPServer::setup(int port, Logger *logger, int numberOfPlayers) {
         clientsSocket = sock;
     }
 
-    if(numberOfPlayers == 4) { //good hardcodeo
+    if(numberOfPlayers == 2) { //good hardcodeo
         clientsSockets[0]->receivingFromClient = true;
         clientsSockets [1]->receivingFromClient = true;
     }else{
@@ -203,7 +203,6 @@ void TCPServer::receiveFromClient(int clientSocket) {
 
     while (1) {
 
-        if(socket->receivingFromClient) {
             socket->reciveData(buf, sizeof(actions_t));
             actions_t *accion = (actions_t *) buf;
 
@@ -213,7 +212,7 @@ void TCPServer::receiveFromClient(int clientSocket) {
             msgQueue->action = *accion;
             msgQueue->client = clientSocket;
             this->incoming_msges_queue->insert(msgQueue);
-        }
+
     }
 }
 
@@ -421,7 +420,7 @@ void TCPServer::updateModel() {
         character_updater_t *update_msg = new character_updater_t;
 
 
-        if (incoming_msg->client == 0)//team1 es de los clientes 1 y 2
+        if (incoming_msg->client == 0 || incoming_msg->client == 1)//team1 es de los clientes 1 y 2
         {
             if (team1->get_currentCharacter()->isStanding() && incoming_msg->action == CHANGEME) {
                 update_msg->action = CHANGEME;

@@ -30,6 +30,7 @@ using namespace std;
 
 class MCGame {
 private:
+    bool isSending;
     bool m_Running;
     bool threadRunning;
     SDL_Window* m_Window;
@@ -53,7 +54,7 @@ private:
     void loadGroundTextureByZIndex();
     Constants* constants;
     void action_update();
-    int myCharacter;
+    int team;
     std::mutex m;
 
 
@@ -92,6 +93,7 @@ public:
     												//despues lo cambiamos en base al tipo de
     												//dato que recibamos
 
+    bool isNotActive();
 };
 
 

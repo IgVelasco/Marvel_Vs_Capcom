@@ -10,12 +10,13 @@
 #include "Controls/Controls.h"
 #include "tools/logger/Logger.h"
 #include "data_structs.h"
+#include <mutex>
 
 class Player: public Renderizable {
 public:
     Player(CharacterClient *first, CharacterClient *second);
     ~Player();
-    void update(character_updater_t* updater);
+    void update(character_updater_t *updater, bool *isSending, bool b);
     void render(SDL_Renderer* mRenderer, int camX, int camY, int posContrincante);
     void free();
 
@@ -42,7 +43,7 @@ private:
     Controls* controls;
     int changeKey;
     bool isChanging;
-
+    std::mutex m;
     void changeCharacter();
     void setCharacterToChanging();
 
