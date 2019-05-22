@@ -165,21 +165,17 @@ int computeDistance(CharacterServer *character1, CharacterServer *character2) {
     return distancia;
 }
 
-int computeDistance2(CharacterServer *character1, CharacterServer *character2)
-{
-	int distancia2;
-	if (character1->getCentro() > character2->getCentro())
-	{
-			distancia2 = character2->getPosX()+character2->getSobrante()
-					- (character1->getPosX()+character1->getSobrante()+character1->getWidth());
-	}
-	else
-	{
-		distancia2 = character2->getPosX()+character2->getSobrante()
-				 + character2->getWidth() - (character1->getPosX() + character1->getSobrante());
-	}
+int computeDistance2(CharacterServer *character1, CharacterServer *character2) {
+    int distancia2;
+    if (character1->getCentro() > character2->getCentro()) {
+        distancia2 = character2->getPosX() + character2->getSobrante()
+                     - (character1->getPosX() + character1->getSobrante() + character1->getWidth());
+    } else {
+        distancia2 = character2->getPosX() + character2->getSobrante()
+                     + character2->getWidth() - (character1->getPosX() + character1->getSobrante());
+    }
 
-	return distancia2;
+    return distancia2;
 
 }
 
@@ -216,7 +212,7 @@ void TCPServer::receiveFromClient(int clientSocket) {
  * Son los denominados "thread escritura cliente x"
  * */
 
-Socket* TCPServer::getClientSocket(int i){
+Socket *TCPServer::getClientSocket(int i) {
     std::unique_lock<std::mutex> lock(m);
     return clientsSockets[i];
 }
@@ -238,7 +234,7 @@ void TCPServer::sendToClient(int clientSocket) {
     while (1) {
 
         character_updater_t *updater;
-        if(client_updater_queue[clientSocket]->empty_queue())
+        if (client_updater_queue[clientSocket]->empty_queue())
             continue;
         updater = client_updater_queue[clientSocket]->get_data();
         socket->sendData(updater, sizeof(character_updater_t));
@@ -257,34 +253,34 @@ void TCPServer::runServer() {
 
     int charactersPerClient;
 
-    if(2 == maxNumberOfPlayers)   // si el maximo de players es 2 elijen 2
+    if (2 == maxNumberOfPlayers)   // si el maximo de players es 2 elijen 2
         charactersPerClient = 2;
     else
         charactersPerClient = 1;
 
-    CharacterServer* characters[MAXPLAYERS];
+    CharacterServer *characters[MAXPLAYERS];
     character_builder_t builders[MAXPLAYERS];
 
     char character[9];
 
     int nclient = 0;
     int nCharacter = 0;
-    for (int i = 0; i < maxNumberOfPlayers ; i++) {    // de 0 a 4  o de 0 a 2
-        for (int j = 0; j < charactersPerClient ; j++) {  // si characters es 1 entra 1 vez
-            clientsSockets[nclient]->reciveData(character,9);
+    for (int i = 0; i < maxNumberOfPlayers; i++) {    // de 0 a 4  o de 0 a 2
+        for (int j = 0; j < charactersPerClient; j++) {  // si characters es 1 entra 1 vez
+            clientsSockets[nclient]->reciveData(character, 9);
             characters[nCharacter] = createServerCharacter(character, nclient, nCharacter);
             characters[nCharacter]->makeBuilderStruct(&builders[nCharacter], nCharacter < 2);
             nCharacter++;
         }
-            nclient++;
+        nclient++;
     }
 
     team1 = new Team(characters[0], characters[1], 1, 1);
     team2 = new Team(characters[2], characters[3], 1, 2);
 
 
-    for (auto & builder : builders) {
-        for (int i = 0; i < maxNumberOfPlayers ; ++i) {
+    for (auto &builder : builders) {
+        for (int i = 0; i < maxNumberOfPlayers; ++i) {
             clientsSockets[i]->sendData(&builder, sizeof(character_builder_t));
         }
     }
@@ -304,57 +300,40 @@ CharacterServer *TCPServer::createServerCharacter(char *character, int nclient, 
     CharacterServer *characterServer;
     character_number_t character_n;
 
-    if (!strcmp(character, "Spiderman"))
+    if (!strcmp(character, "Spiderman"))   //FIX THIS SHIT
         character_n = SPIDERMAN;
-    if (!strcmp(character, "Wolverine"))
+    if (!strcmp(character, "Wolverine"))  //FIX THIS
         character_n = WOLVERINE;
+
+    int pos;
+    if (characterNumber < 2)
+        pos = constants.INITIAL_POS_X_PLAYER_ONE;
+    else
+        pos = constants.INITIAL_POS_X_PLAYER_TWO;
 
 
     switch (character_n) {
         case SPIDERMAN:
-            if (characterNumber < 2)
-                characterServer = new SpidermanServer(constants.INITIAL_POS_X_PLAYER_ONE,
-                                                      false,
-                                                      constants.widthSpiderman,
-                                                      constants.heightSpiderman,
-                                                      constants.spidermanSobrante,
-                                                      constants.spidermanAncho,
-                                                      constants.screenWidth,
-                                                      nclient
-                );
-            else
-                characterServer = new SpidermanServer(constants.INITIAL_POS_X_PLAYER_TWO,
-                                                      true,
-                                                      constants.widthSpiderman,
-                                                      constants.heightSpiderman,
-                                                      constants.spidermanSobrante,
-                                                      constants.spidermanAncho,
-                                                      constants.screenWidth,
-                                                      nclient
-                );
+            characterServer = new SpidermanServer(pos,
+                                                  constants.widthSpiderman,
+                                                  constants.heightSpiderman,
+                                                  constants.spidermanSobrante,
+                                                  constants.spidermanAncho,
+                                                  constants.screenWidth,
+                                                  nclient
+            );
             break;
 
         case WOLVERINE:
-            if (characterNumber < 2)
-                characterServer = new WolverineServer(constants.INITIAL_POS_X_PLAYER_ONE,
-                                                      false,
-                                                      constants.widthWolverine,
-                                                      constants.heightWolverine,
-                                                      constants.wolverineSobrante,
-                                                      constants.wolverineAncho,
-                                                      constants.screenWidth,
-                                                      nclient
-                );
-            else
-                characterServer = new WolverineServer(constants.INITIAL_POS_X_PLAYER_TWO,
-                                                      true,
-                                                      constants.widthWolverine,
-                                                      constants.heightWolverine,
-                                                      constants.wolverineSobrante,
-                                                      constants.wolverineAncho,
-                                                      constants.screenWidth,
-                                                      nclient
-                );
+            characterServer = new WolverineServer(pos,
+                                                  false,
+                                                  constants.widthWolverine,
+                                                  constants.heightWolverine,
+                                                  constants.wolverineSobrante,
+                                                  constants.wolverineAncho,
+                                                  constants.screenWidth,
+                                                  nclient
+            );
     }
     return characterServer;
 }
@@ -417,21 +396,29 @@ void TCPServer::configJson(json config) {
 }
 
 void TCPServer::updateModel() {
-          int distancia = computeDistance(team1->get_currentCharacter(), team2->get_currentCharacter());
+    while (1) {
+        incoming_msg_t *incoming_msg;
+        if (incoming_msges_queue->empty_queue())
+            continue;
+        incoming_msg = this->incoming_msges_queue->get_data();
 
-        int distancia2 = computeDistance2(team1->get_currentCharacter(),team2->get_currentCharacter());
+        int distancia = computeDistance(team1->get_currentCharacter(), team2->get_currentCharacter());
+
+        int distancia2 = computeDistance2(team1->get_currentCharacter(), team2->get_currentCharacter());
 
         character_updater_t *update_msg = new character_updater_t;
 
-        bool changeAvailable = false;
 
         if (incoming_msg->client == 0)//team1 es de los clientes 1 y 2
         {
-            if(team1->get_currentCharacter()->currentAction == STANDING && incoming_msg->action == CHANGEME) {
+            if (team1->get_currentCharacter()->isStanding() && incoming_msg->action == CHANGEME) {
                 update_msg->action = CHANGEME;
                 team1->update(distancia, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
-
-            }else{
+            } else if (team1->invalidIntroAction() && incoming_msg->action == CHANGEME) {
+                update_msg->action = team1->get_currentCharacter()->currentAction;
+                team1->update(distancia, team2->get_currentCharacter()->getPosX(),
+                              team1->get_currentCharacter()->currentAction);
+            } else {
                 team1->update(distancia, team2->get_currentCharacter()->getPosX(), incoming_msg->action);
                 update_msg->action = team1->get_currentCharacter()->getCurrentAction();
             }
@@ -440,11 +427,15 @@ void TCPServer::updateModel() {
             update_msg->team = 1;
             update_msg->currentSprite = team1->get_currentCharacter()->getSpriteNumber();
         } else {
-            if(team2->get_currentCharacter()->currentAction == STANDING && incoming_msg->action == CHANGEME){
+            if (team2->get_currentCharacter()->isStanding() && incoming_msg->action == CHANGEME) {
                 update_msg->action = CHANGEME;
-                team2->update(distancia, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
-            }else{
-                team2->update(distancia, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
+                team2->update(distancia2, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
+            } else if (team2->invalidIntroAction() && incoming_msg->action == CHANGEME) {
+                update_msg->action = team2->get_currentCharacter()->currentAction;
+                team2->update(distancia2, team1->get_currentCharacter()->getPosX(),
+                              team2->get_currentCharacter()->currentAction);
+            } else {
+                team2->update(distancia2, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
                 update_msg->action = team2->get_currentCharacter()->getCurrentAction();
             }
             update_msg->posX = team2->get_currentCharacter()->getPosX();
@@ -453,7 +444,7 @@ void TCPServer::updateModel() {
             update_msg->currentSprite = team2->get_currentCharacter()->getSpriteNumber();
         }
 
-        character_updater_t* update[MAXPLAYERS];
+        character_updater_t *update[MAXPLAYERS];
         for (int j = 0; j < MAXPLAYERS; ++j) {
             update[j] = new character_updater_t;
             update[j]->action = update_msg->action;
@@ -465,64 +456,14 @@ void TCPServer::updateModel() {
 
         for (int i = 0; i < MAXPLAYERS; ++i) {
             std::unique_lock<std::mutex> lock(m);
-            this->character_updater_queue[i]->insert(update[i]);
+            this->client_updater_queue[i]->insert(update[i]);
         }
 
         incoming_msges_queue->delete_data();
     }
-      int distancia = computeDistance(team1->get_currentCharacter(), team2->get_currentCharacter());
 
-        int distancia2 = computeDistance2(team1->get_currentCharacter(),team2->get_currentCharacter());
+}
 
-        character_updater_t *update_msg = new character_updater_t;
-
-        bool changeAvailable = false;
-
-        if (incoming_msg->client == 0)//team1 es de los clientes 1 y 2
-        {
-            if(team1->get_currentCharacter()->currentAction == STANDING && incoming_msg->action == CHANGEME) {
-                update_msg->action = CHANGEME;
-                team1->update(distancia, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
-
-            }else{
-                team1->update(distancia, team2->get_currentCharacter()->getPosX(), incoming_msg->action);
-                update_msg->action = team1->get_currentCharacter()->getCurrentAction();
-            }
-            update_msg->posX = team1->get_currentCharacter()->getPosX();
-            update_msg->posY = team1->get_currentCharacter()->getPosY();
-            update_msg->team = 1;
-            update_msg->currentSprite = team1->get_currentCharacter()->getSpriteNumber();
-        } else {
-            if(team2->get_currentCharacter()->currentAction == STANDING && incoming_msg->action == CHANGEME){
-                update_msg->action = CHANGEME;
-                team2->update(distancia, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
-            }else{
-                team2->update(distancia, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
-                update_msg->action = team2->get_currentCharacter()->getCurrentAction();
-            }
-            update_msg->posX = team2->get_currentCharacter()->getPosX();
-            update_msg->posY = team2->get_currentCharacter()->getPosY();
-            update_msg->team = 2;
-            update_msg->currentSprite = team2->get_currentCharacter()->getSpriteNumber();
-        }
-
-        character_updater_t* update[MAXPLAYERS];
-        for (int j = 0; j < MAXPLAYERS; ++j) {
-            update[j] = new character_updater_t;
-            update[j]->action = update_msg->action;
-            update[j]->team = update_msg->team;
-            update[j]->posX = update_msg->posX;
-            update[j]->posY = update_msg->posY;
-            update[j]->currentSprite = update_msg->currentSprite;
-        }
-
-        for (int i = 0; i < MAXPLAYERS; ++i) {
-            std::unique_lock<std::mutex> lock(m);
-            this->character_updater_queue[i]->insert(update[i]);
-        }
-
-        incoming_msges_queue->delete_data();
-    }
     
     
     

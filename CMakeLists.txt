@@ -55,7 +55,7 @@ set(SOURCE_FILES
         src/CharactersServer/WolverineServer.h
         src/Team.h
         src/Team.cpp
-        src/orientation_constants.h)
+        src/action_constants.h)
 
 
 add_executable(marvel_vs_capcom ${SOURCE_FILES})

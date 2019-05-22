@@ -2,7 +2,7 @@
 #define MVC_DATA_STRUCTS
 
 
-#include "orientation_constants.h"
+#include "action_constants.h"
 
 typedef enum connection_status{
 	NOT_READY = 0,
