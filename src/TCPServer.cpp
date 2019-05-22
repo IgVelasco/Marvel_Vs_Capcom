@@ -417,17 +417,13 @@ void TCPServer::configJson(json config) {
 }
 
 void TCPServer::updateModel() {
-    while (1) {
-        incoming_msg_t *incoming_msg;
-        if(incoming_msges_queue->empty_queue())
-            continue;
-        incoming_msg = this->incoming_msges_queue->get_data();
-
-        int distancia = computeDistance(team1->get_currentCharacter(), team2->get_currentCharacter());
+          int distancia = computeDistance(team1->get_currentCharacter(), team2->get_currentCharacter());
 
         int distancia2 = computeDistance2(team1->get_currentCharacter(),team2->get_currentCharacter());
 
         character_updater_t *update_msg = new character_updater_t;
+
+        bool changeAvailable = false;
 
         if (incoming_msg->client == 0)//team1 es de los clientes 1 y 2
         {
@@ -446,9 +442,9 @@ void TCPServer::updateModel() {
         } else {
             if(team2->get_currentCharacter()->currentAction == STANDING && incoming_msg->action == CHANGEME){
                 update_msg->action = CHANGEME;
-                team2->update(distancia2, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
+                team2->update(distancia, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
             }else{
-                team2->update(distancia2, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
+                team2->update(distancia, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
                 update_msg->action = team2->get_currentCharacter()->getCurrentAction();
             }
             update_msg->posX = team2->get_currentCharacter()->getPosX();
@@ -469,18 +465,64 @@ void TCPServer::updateModel() {
 
         for (int i = 0; i < MAXPLAYERS; ++i) {
             std::unique_lock<std::mutex> lock(m);
-            this->client_updater_queue[i]->insert(update[i]);
+            this->character_updater_queue[i]->insert(update[i]);
         }
 
         incoming_msges_queue->delete_data();
     }
+      int distancia = computeDistance(team1->get_currentCharacter(), team2->get_currentCharacter());
 
-}
+        int distancia2 = computeDistance2(team1->get_currentCharacter(),team2->get_currentCharacter());
 
+        character_updater_t *update_msg = new character_updater_t;
 
+        bool changeAvailable = false;
 
+        if (incoming_msg->client == 0)//team1 es de los clientes 1 y 2
+        {
+            if(team1->get_currentCharacter()->currentAction == STANDING && incoming_msg->action == CHANGEME) {
+                update_msg->action = CHANGEME;
+                team1->update(distancia, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
 
+            }else{
+                team1->update(distancia, team2->get_currentCharacter()->getPosX(), incoming_msg->action);
+                update_msg->action = team1->get_currentCharacter()->getCurrentAction();
+            }
+            update_msg->posX = team1->get_currentCharacter()->getPosX();
+            update_msg->posY = team1->get_currentCharacter()->getPosY();
+            update_msg->team = 1;
+            update_msg->currentSprite = team1->get_currentCharacter()->getSpriteNumber();
+        } else {
+            if(team2->get_currentCharacter()->currentAction == STANDING && incoming_msg->action == CHANGEME){
+                update_msg->action = CHANGEME;
+                team2->update(distancia, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
+            }else{
+                team2->update(distancia, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
+                update_msg->action = team2->get_currentCharacter()->getCurrentAction();
+            }
+            update_msg->posX = team2->get_currentCharacter()->getPosX();
+            update_msg->posY = team2->get_currentCharacter()->getPosY();
+            update_msg->team = 2;
+            update_msg->currentSprite = team2->get_currentCharacter()->getSpriteNumber();
+        }
 
+        character_updater_t* update[MAXPLAYERS];
+        for (int j = 0; j < MAXPLAYERS; ++j) {
+            update[j] = new character_updater_t;
+            update[j]->action = update_msg->action;
+            update[j]->team = update_msg->team;
+            update[j]->posX = update_msg->posX;
+            update[j]->posY = update_msg->posY;
+            update[j]->currentSprite = update_msg->currentSprite;
+        }
 
+        for (int i = 0; i < MAXPLAYERS; ++i) {
+            std::unique_lock<std::mutex> lock(m);
+            this->character_updater_queue[i]->insert(update[i]);
+        }
 
-
+        incoming_msges_queue->delete_data();
+    }
+    
+    
+    

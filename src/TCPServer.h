@@ -88,6 +88,8 @@ public:
     Socket *getClientSocket(int i);
 
     void updateModel();
+
+    bool invalidIntroAction(actions_t action);
 };
 
 #endif
