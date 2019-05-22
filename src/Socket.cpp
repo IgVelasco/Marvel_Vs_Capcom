@@ -15,6 +15,7 @@ const string DEBUG = "DEBUG";
 Socket::Socket() {
     this->fd = 0;
     this->port = 0;
+    receivingFromClient = false;
 }
 
 bool Socket::create(Logger *logger) {

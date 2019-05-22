@@ -22,6 +22,8 @@ private:
 public:
 	int fd;
 
+	bool receivingFromClient;
+
 	Socket();
 
 	bool create(Logger* logger);

@@ -43,7 +43,7 @@ CharacterServer::CharacterServer(
     this->isLookingLeft = isLookingLeft;
     this->clientNumber = numberOfClient;
     currentAction = STANDING;
-    this->currentClient = NULL;
+    this->currentClient = numberOfClient;
 
 
     this->lastTime = SDL_GetTicks();

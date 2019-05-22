@@ -92,7 +92,7 @@ void MCGame::loadGroundTextureByZIndex(){
 
 
 
-MCGame::MCGame(json config, int ancho, int alto, TCPClient* client) {
+MCGame::MCGame(json config, int ancho, int alto, TCPClient *client) {
     constants = (Constants*) (malloc(sizeof(Constants *)));
     this->logger = Logger::getInstance();
     this->SCREEN_WIDTH = ancho;
@@ -168,8 +168,14 @@ MCGame::MCGame(json config, int ancho, int alto, TCPClient* client) {
 
     char* character1 = "Spiderman";
     char* character2 = "Wolverine";
-    tcpClient->Send((void*) character1, sizeof(character1) + 1);
-    tcpClient->Send((void*) character2, sizeof(character2) + 1);
+
+     if(tcpClient->nclient == 1 || tcpClient->nclient == 3)
+        tcpClient->Send((void*) character1, sizeof(character1) + 1);
+     else
+         tcpClient->Send((void*) character2, sizeof(character2) + 1);
+
+   // tcpClient->Send((void*) character1, sizeof(character1) + 1);
+    //tcpClient->Send((void*) character2, sizeof(character2) + 1);
 
     //MENU
 

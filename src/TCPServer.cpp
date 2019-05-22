@@ -58,6 +58,14 @@ bool TCPServer::setup(int port, Logger *logger, int numberOfPlayers) {
         clientsSocket = sock;
     }
 
+    if(numberOfPlayers == 4) { //good hardcodeo
+        clientsSockets[0]->receivingFromClient = true;
+        clientsSockets [1]->receivingFromClient = true;
+    }else{
+        clientsSockets[0]->receivingFromClient = true;
+        clientsSockets [3]->receivingFromClient = true;
+    }
+
     this->incoming_msges_queue = new Queue<incoming_msg_t *>;
 
 
@@ -185,24 +193,27 @@ int computeDistance2(CharacterServer *character1, CharacterServer *character2) {
  * Son los denominados "thread lectura cliente x"*/
 void TCPServer::receiveFromClient(int clientSocket) {
 
-
     pthread_mutex_lock(&mtx);
     Socket *socket = getClientSocket(clientSocket);
     pthread_mutex_unlock(&mtx);
+
+
 
     char buf[sizeof(actions_t)];
 
     while (1) {
 
-        socket->reciveData(buf, sizeof(actions_t));
-        actions_t *accion = (actions_t *) buf;
+        if(socket->receivingFromClient) {
+            socket->reciveData(buf, sizeof(actions_t));
+            actions_t *accion = (actions_t *) buf;
 
-        //Agrego elementos a la cola de mensajes entrantes
-        //void* action = malloc(sizeof(incoming_msg_t));
-        incoming_msg_t *msgQueue = new incoming_msg_t;
-        msgQueue->action = *accion;
-        msgQueue->client = clientSocket;
-        this->incoming_msges_queue->insert(msgQueue);
+            //Agrego elementos a la cola de mensajes entrantes
+            //void* action = malloc(sizeof(incoming_msg_t));
+            incoming_msg_t *msgQueue = new incoming_msg_t;
+            msgQueue->action = *accion;
+            msgQueue->client = clientSocket;
+            this->incoming_msges_queue->insert(msgQueue);
+        }
     }
 }
 
@@ -285,11 +296,13 @@ void TCPServer::runServer() {
         }
     }
 
-    std::thread receive1(&TCPServer::receiveFromClient, this, 0);
-    std::thread receive2(&TCPServer::receiveFromClient, this, 1);
+    std::thread receiveFromClienThreads[maxNumberOfPlayers];
+    std::thread sendToClientThreats[maxNumberOfPlayers];
 
-    std::thread send1(&TCPServer::sendToClient, this, 0);
-    std::thread send2(&TCPServer::sendToClient, this, 1);
+    for (int i = 0; i < maxNumberOfPlayers ; ++i) {
+        receiveFromClienThreads[i] = std::thread(&TCPServer::receiveFromClient, this, i);
+        sendToClientThreats[i] = std::thread(&TCPServer::sendToClient, this, i);
+    }
 
     updateModel();
 
@@ -412,13 +425,13 @@ void TCPServer::updateModel() {
         {
             if (team1->get_currentCharacter()->isStanding() && incoming_msg->action == CHANGEME) {
                 update_msg->action = CHANGEME;
-                team1->update(distancia, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
+                team1->update(distancia, team1->get_currentCharacter()->getPosX(), incoming_msg->action, this->clientsSockets);
             } else if (team1->invalidIntroAction() && incoming_msg->action == CHANGEME) {
                 update_msg->action = team1->get_currentCharacter()->currentAction;
                 team1->update(distancia, team2->get_currentCharacter()->getPosX(),
-                              team1->get_currentCharacter()->currentAction);
+                              team1->get_currentCharacter()->currentAction, this->clientsSockets);
             } else {
-                team1->update(distancia, team2->get_currentCharacter()->getPosX(), incoming_msg->action);
+                team1->update(distancia, team2->get_currentCharacter()->getPosX(), incoming_msg->action, this->clientsSockets);
                 update_msg->action = team1->get_currentCharacter()->getCurrentAction();
             }
             update_msg->posX = team1->get_currentCharacter()->getPosX();
@@ -428,13 +441,13 @@ void TCPServer::updateModel() {
         } else {
             if (team2->get_currentCharacter()->isStanding() && incoming_msg->action == CHANGEME) {
                 update_msg->action = CHANGEME;
-                team2->update(distancia2, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
+                team2->update(distancia2, team1->get_currentCharacter()->getPosX(), incoming_msg->action, this->clientsSockets);
             } else if (team2->invalidIntroAction() && incoming_msg->action == CHANGEME) {
                 update_msg->action = team2->get_currentCharacter()->currentAction;
                 team2->update(distancia2, team1->get_currentCharacter()->getPosX(),
-                              team2->get_currentCharacter()->currentAction);
+                              team2->get_currentCharacter()->currentAction, this->clientsSockets);
             } else {
-                team2->update(distancia2, team1->get_currentCharacter()->getPosX(), incoming_msg->action);
+                team2->update(distancia2, team1->get_currentCharacter()->getPosX(), incoming_msg->action, this->clientsSockets);
                 update_msg->action = team2->get_currentCharacter()->getCurrentAction();
             }
             update_msg->posX = team2->get_currentCharacter()->getPosX();
