@@ -33,8 +33,7 @@ using namespace std;
 class TCPServer
 {
 private:
-	Team* team1;
-	Team* team2;
+	Team* team[2];
     int numberOfConnections;
     int maxNumberOfPlayers;
     int port;

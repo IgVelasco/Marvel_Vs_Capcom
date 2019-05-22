@@ -164,10 +164,9 @@ MCGame::MCGame(json config, int ancho, int alto, TCPClient *client) {
 
     // MENU
 
-
-
     char* character1 = "Spiderman";
     char* character2 = "Wolverine";
+    cout<< tcpClient->nclient <<endl;
 
      if(tcpClient->nclient == 1 || tcpClient->nclient == 3)
         tcpClient->Send((void*) character1, sizeof(character1) + 1);

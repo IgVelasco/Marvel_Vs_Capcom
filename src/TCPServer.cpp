@@ -28,8 +28,6 @@ TCPServer::TCPServer() {
     this->port = 0;
     this->serverSocket = new Socket();
     this->newSockFd = new Socket();
-    this->team1 = NULL;
-    this->team2 = NULL;
 }
 
 typedef struct {
@@ -58,12 +56,12 @@ bool TCPServer::setup(int port, Logger *logger, int numberOfPlayers) {
         clientsSocket = sock;
     }
 
-    if(numberOfPlayers == 2) { //good hardcodeo
+    if (numberOfPlayers == 2) { //good hardcodeo
         clientsSockets[0]->receivingFromClient = true;
-        clientsSockets [1]->receivingFromClient = true;
-    }else{
+        clientsSockets[1]->receivingFromClient = true;
+    } else {
         clientsSockets[0]->receivingFromClient = true;
-        clientsSockets [3]->receivingFromClient = true;
+        clientsSockets[3]->receivingFromClient = true;
     }
 
     this->incoming_msges_queue = new Queue<incoming_msg_t *>;
@@ -173,20 +171,6 @@ int computeDistance(CharacterServer *character1, CharacterServer *character2) {
     return distancia;
 }
 
-int computeDistance2(CharacterServer *character1, CharacterServer *character2) {
-    int distancia2;
-    if (character1->getCentro() > character2->getCentro()) {
-        distancia2 = character2->getPosX() + character2->getSobrante()
-                     - (character1->getPosX() + character1->getSobrante() + character1->getWidth());
-    } else {
-        distancia2 = character2->getPosX() + character2->getSobrante()
-                     + character2->getWidth() - (character1->getPosX() + character1->getSobrante());
-    }
-
-    return distancia2;
-
-}
-
 /*Funcion que lee del socket la informacion que los clientes le envian.
  * Esta deberia leer, codificar y encolar eventos en la cola del servidor
  *
@@ -198,20 +182,19 @@ void TCPServer::receiveFromClient(int clientSocket) {
     pthread_mutex_unlock(&mtx);
 
 
-
     char buf[sizeof(actions_t)];
 
     while (1) {
 
-            socket->reciveData(buf, sizeof(actions_t));
-            actions_t *accion = (actions_t *) buf;
+        socket->reciveData(buf, sizeof(actions_t));
+        actions_t *accion = (actions_t *) buf;
 
-            //Agrego elementos a la cola de mensajes entrantes
-            //void* action = malloc(sizeof(incoming_msg_t));
-            incoming_msg_t *msgQueue = new incoming_msg_t;
-            msgQueue->action = *accion;
-            msgQueue->client = clientSocket;
-            this->incoming_msges_queue->insert(msgQueue);
+        //Agrego elementos a la cola de mensajes entrantes
+        //void* action = malloc(sizeof(incoming_msg_t));
+        incoming_msg_t *msgQueue = new incoming_msg_t;
+        msgQueue->action = *accion;
+        msgQueue->client = clientSocket;
+        this->incoming_msges_queue->insert(msgQueue);
 
     }
 }
@@ -285,8 +268,8 @@ void TCPServer::runServer() {
         nclient++;
     }
 
-    team1 = new Team(characters[0], characters[1], 1, 1);
-    team2 = new Team(characters[2], characters[3], 1, 2);
+    team[0] = new Team(characters[0], characters[1], 1, 1);
+    team[1] = new Team(characters[2], characters[3], 1, 2);
 
     //FOR en esos characters y cada vez que paso el characterPerClient le mando el team que es
 
@@ -299,7 +282,7 @@ void TCPServer::runServer() {
     std::thread receiveFromClienThreads[maxNumberOfPlayers];
     std::thread sendToClientThreats[maxNumberOfPlayers];
 
-    for (int i = 0; i < maxNumberOfPlayers ; ++i) {
+    for (int i = 0; i < maxNumberOfPlayers; ++i) {
         receiveFromClienThreads[i] = std::thread(&TCPServer::receiveFromClient, this, i);
         sendToClientThreats[i] = std::thread(&TCPServer::sendToClient, this, i);
     }
@@ -414,47 +397,42 @@ void TCPServer::updateModel() {
             continue;
         incoming_msg = this->incoming_msges_queue->get_data();
 
-        int distancia = computeDistance(team1->get_currentCharacter(), team2->get_currentCharacter());
+        int distancia[2];
+        distancia[0]= computeDistance(team[0]->get_currentCharacter(), team[1]->get_currentCharacter());
 
-        int distancia2 = computeDistance2(team1->get_currentCharacter(), team2->get_currentCharacter());
+        distancia[1] = computeDistance(team[1]->get_currentCharacter(), team[0]->get_currentCharacter());
 
         character_updater_t *update_msg = new character_updater_t;
 
-
-        if (incoming_msg->client == 0 || incoming_msg->client == 1)//team1 es de los clientes 1 y 2
-        {
-            if (team1->get_currentCharacter()->isStanding() && incoming_msg->action == CHANGEME) {
-                update_msg->action = CHANGEME;
-                team1->update(distancia, team1->get_currentCharacter()->getPosX(), incoming_msg->action, this->clientsSockets);
-            } else if (team1->invalidIntroAction() && incoming_msg->action == CHANGEME) {
-                update_msg->action = team1->get_currentCharacter()->currentAction;
-                team1->update(distancia, team2->get_currentCharacter()->getPosX(),
-                              team1->get_currentCharacter()->currentAction, this->clientsSockets);
-            } else {
-                team1->update(distancia, team2->get_currentCharacter()->getPosX(), incoming_msg->action, this->clientsSockets);
-                update_msg->action = team1->get_currentCharacter()->getCurrentAction();
-            }
-            update_msg->posX = team1->get_currentCharacter()->getPosX();
-            update_msg->posY = team1->get_currentCharacter()->getPosY();
-            update_msg->team = 1;
-            update_msg->currentSprite = team1->get_currentCharacter()->getSpriteNumber();
+        int teamToUpdate;
+        int enemyTeam;
+        if (incoming_msg->client == 0 || incoming_msg->client == 1) {//team1 es de los clientes 1 y 2
+            teamToUpdate = 0;
+            enemyTeam = 1;
         } else {
-            if (team2->get_currentCharacter()->isStanding() && incoming_msg->action == CHANGEME) {
-                update_msg->action = CHANGEME;
-                team2->update(distancia2, team1->get_currentCharacter()->getPosX(), incoming_msg->action, this->clientsSockets);
-            } else if (team2->invalidIntroAction() && incoming_msg->action == CHANGEME) {
-                update_msg->action = team2->get_currentCharacter()->currentAction;
-                team2->update(distancia2, team1->get_currentCharacter()->getPosX(),
-                              team2->get_currentCharacter()->currentAction, this->clientsSockets);
-            } else {
-                team2->update(distancia2, team1->get_currentCharacter()->getPosX(), incoming_msg->action, this->clientsSockets);
-                update_msg->action = team2->get_currentCharacter()->getCurrentAction();
-            }
-            update_msg->posX = team2->get_currentCharacter()->getPosX();
-            update_msg->posY = team2->get_currentCharacter()->getPosY();
-            update_msg->team = 2;
-            update_msg->currentSprite = team2->get_currentCharacter()->getSpriteNumber();
+            teamToUpdate = 1;
+            enemyTeam = 0;
         }
+
+        if (team[teamToUpdate]->get_currentCharacter()->isStanding() && incoming_msg->action == CHANGEME) {
+            update_msg->action = CHANGEME;
+            team[teamToUpdate]->update(distancia[teamToUpdate], team[teamToUpdate]->get_currentCharacter()->getPosX(),
+                                           incoming_msg->action, this->clientsSockets);
+        } else if (team[teamToUpdate]->invalidIntroAction() && incoming_msg->action == CHANGEME) {
+            update_msg->action = team[teamToUpdate]->get_currentCharacter()->currentAction;
+            team[teamToUpdate]->update(distancia[teamToUpdate], team[enemyTeam]->get_currentCharacter()->getPosX(),
+                                       team[teamToUpdate]->get_currentCharacter()->currentAction, this->clientsSockets);
+        } else {
+            team[teamToUpdate]->update(distancia[teamToUpdate], team[enemyTeam]->get_currentCharacter()->getPosX(),
+                                       incoming_msg->action, this->clientsSockets);
+            update_msg->action = team[teamToUpdate]->get_currentCharacter()->getCurrentAction();
+        }
+
+        update_msg->posX = team[teamToUpdate]->get_currentCharacter()->getPosX();
+        update_msg->posY = team[teamToUpdate]->get_currentCharacter()->getPosY();
+        update_msg->team = teamToUpdate;
+        update_msg->currentSprite = team[teamToUpdate]->get_currentCharacter()->getSpriteNumber();
+
 
         character_updater_t *update[MAXPLAYERS];
         for (int j = 0; j < MAXPLAYERS; ++j) {
