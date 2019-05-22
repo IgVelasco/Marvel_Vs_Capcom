@@ -288,6 +288,7 @@ void TCPServer::runServer() {
     team1 = new Team(characters[0], characters[1], 1, 1);
     team2 = new Team(characters[2], characters[3], 1, 2);
 
+    //FOR en esos characters y cada vez que paso el characterPerClient le mando el team que es
 
     for (auto &builder : builders) {
         for (int i = 0; i < maxNumberOfPlayers; ++i) {
