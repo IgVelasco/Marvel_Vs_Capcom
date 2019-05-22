@@ -326,7 +326,6 @@ CharacterServer *TCPServer::createServerCharacter(char *character, int nclient, 
 
         case WOLVERINE:
             characterServer = new WolverineServer(pos,
-                                                  false,
                                                   constants.widthWolverine,
                                                   constants.heightWolverine,
                                                   constants.wolverineSobrante,
