@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  mvc:
+    command: cmake CmakeLists.txt
+    command: make
+    command: ./server.sh
+    ports:
+      - "6996:6996"
+    build:
+      context: ./
+    volumes:
+      - ./:/app
