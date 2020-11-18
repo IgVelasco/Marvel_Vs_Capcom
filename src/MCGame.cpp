@@ -10,6 +10,8 @@
 #include<iostream>
 #include <sys/poll.h>
 #include "signal_handler.h"
+#include "RoundBanner.h"
+#include "TimeBanner.h"
 #include <csignal>
 
 
@@ -61,9 +63,23 @@ bool MCGame::init(const char *title, int xpos, int ypos, int width, int height, 
                     logger->log("SDL_image no pudo inicializarse.", ERROR);
                     return false;
                 }
+
+                //Inicializo SDL MIxer
+				if (!music->initialize()) {
+					logger->log("SDL_mixer no pudo inicializarse", ERROR);
+					return false;
+				}
             }
         }
     }
+
+
+    roundBanner = new RoundBanner();
+    timeBanner[0] = new TimeBanner(FIRST_DIGIT_POSITION);
+    timeBanner[1] = new TimeBanner(SECOND_DIGIT_POSITION);
+
+    roundCounters[0] = new RoundCounter(FIRST_ROUND_COUNTER_POSITION);
+    roundCounters[1] = new RoundCounter(SECOND_ROUND_COUNTER_POSITION);
 
     Texture* waiting = new Texture();
     SDL_SetRenderDrawColor(m_Renderer, 0xFF, 0xFF, 0xFF, 0xFF);
@@ -73,6 +89,11 @@ bool MCGame::init(const char *title, int xpos, int ypos, int width, int height, 
     waiting->render(0, 0, 800, 600, m_Renderer);
     SDL_RenderPresent(m_Renderer); // draw to the screen
     // everything inited successfully,
+
+    winningTeam_background_image.loadFromFile("images/pantalla_final/fondo.png", m_Renderer);
+    winningTeam_banner[0].loadFromFile("images/pantalla_final/team1wins.png", m_Renderer);
+    winningTeam_banner[1].loadFromFile("images/pantalla_final/team2wins.png", m_Renderer);
+
     return true;
 }
 
@@ -80,6 +101,9 @@ void MCGame::loadInitialTextures() {
     players[0]->loads(m_Renderer, 3200);
     players[1]->loads(m_Renderer, 0);
     loadGroundTextureByZIndex();
+    banner.loadFromFile("images/barras/banner.png",m_Renderer);
+    musicBanner.loadFromFile("images/press.png",m_Renderer);
+
 }
 
 void MCGame::loadGroundTextureByZIndex() {
@@ -122,6 +146,8 @@ MCGame::MCGame(json config, int ancho, int alto, TCPClient *client) {
     m_Running = true;
     appCloseFromMenu = false;
     endgame = false;
+    weHaveAWinner = false;
+    winningTeam = -1;
 
     endgame_image.loadFromFile("images/gameOver.png",m_Renderer);
 
@@ -212,26 +238,8 @@ MCGame::MCGame(json config, int ancho, int alto, TCPClient *client) {
 
     parallaxController = new Parallax(&middleGround, &backGround, &camera, &centerBefore, &centerLater, logger,
                                       SCREEN_WIDTH);
+    music = new Music();
 }
-
-void MCGame::alive_action(){
-    actions_t aliveAction = ALIVE;
-    Uint32 last_time = SDL_GetTicks();
-    Uint32 actual_time;
-
-    while(m_Running){
-
-        if(isActive())
-            continue;
-
-        actual_time = SDL_GetTicks();
-        if((actual_time - last_time) > 30 ){
-            tcpClient->socketClient->sendData(&aliveAction, sizeof(actions_t));
-            last_time = actual_time;
-        }
-    }
-}
-
 
 
 void MCGame::action_update() {
@@ -284,9 +292,7 @@ void MCGame::run() {
 
         fpsManager.stop();
     }
-   // alive.join();
     send.join();
-  //  alive.~thread();
     send.~thread();
 
 
@@ -303,12 +309,22 @@ void MCGame::render() {
     if(endgame){
         endgame_image.loadFromFile("images/gameOver.png",m_Renderer);
         endgame_image.render(0,0,800,600,m_Renderer);
+    }
+    else if(weHaveAWinner){
+        //winningTeam_background_image.loadFromFile("images/pantalla_final/fondo.png", m_Renderer);
+        winningTeam_background_image.render(0,0,800,600,m_Renderer);
+        players[winningTeam]->renderWinners(m_Renderer);
+        winningTeam_banner[winningTeam].render(0,0,800,600,m_Renderer);
 
-    } else {
+    }
+    else {
 
         Renderizable *renderizables[5] = {&(*middleGround), &(*backGround), &(*frontGround), &(*players[0]),
                                           &(*players[1])};
         orderRenderizableListByZIndex(renderizables);
+
+
+        //roundBanner->render(nullptr);
 
         for (int i = 0; i < 5; i++) {
             if (renderizables[i] == backGround) {
@@ -317,14 +333,31 @@ void MCGame::render() {
                 middleGround->render(camera.x, camera.y, m_Renderer, &middleGroundTexture, nullptr);
             } else if (renderizables[i] == frontGround) {
                 frontGround->render(0, 0, m_Renderer, &frontGroundTexture, &camera);
+                banner.render(0, 11, 800, 104, m_Renderer);
+                musicBanner.render(579, 2, 219, 11, m_Renderer);
+
             } else if (renderizables[i] == players[1]) {
                 players[1]->render(m_Renderer, camera.x, camera.y, players[0]->getCentro());
             } else if (renderizables[i] == players[0]) {
                 players[0]->render(m_Renderer, camera.x, camera.y, players[1]->getCentro());
             }
         }
+        players[0]->renderProyectiles(m_Renderer, camera.x, camera.y);
+        players[1]->renderProyectiles(m_Renderer, camera.x, camera.y);
+
+        roundBanner->render(m_Renderer);
+        roundCounters[0]->render(m_Renderer);
+        roundCounters[1]->render(m_Renderer);
+        timeBanner[0]->render(m_Renderer);
+        timeBanner[1]->render(m_Renderer);
+        //barra->render(m_Renderer);
+        players[0]->renderBanner(m_Renderer);
+        players[1]->renderBanner(m_Renderer);
     }
     logger->log("Fin render.", DEBUG);
+
+
+
     SDL_RenderPresent(m_Renderer); // draw to the screen
 }
 
@@ -349,6 +382,7 @@ void orderRenderizableListByZIndex(Renderizable **list) {
 
 void MCGame::clean() {
     //m_Texture.free();
+	music->free();
     free(constants);
     logger->log("Inicio limpieza MCGame.", INFO);
     delete players[0];
@@ -358,6 +392,8 @@ void MCGame::clean() {
     middleGroundTexture.free();
     backGroundTexture.free();
     menuTexture.free();
+    banner.free();
+    musicBanner.free();
     cliente1.free();
     cliente2.free();
     cliente3.free();
@@ -386,6 +422,9 @@ void MCGame::handleEvents() {
 }
 
 void MCGame::update() {
+
+	if(weHaveAWinner)
+		return;
 
 	struct pollfd fds[1];
 	memset(fds, 0, sizeof(fds));
@@ -423,10 +462,37 @@ void MCGame::update() {
         character_updater_t *updater = (character_updater_t *) buf1;
 
 		if(updater->gameFinishedByDisconnections || !receiveCorrect ){
-		    cout<< updater->gameFinishedByDisconnections << "     " <<endl;
+			music->endGame();
 		    endgame = true;
 		    return;
 		}
+		else if(updater->gameFinishedByWinningTeam){
+			music->endGame();
+		    weHaveAWinner = true;
+		    winningTeam = updater->winningTeam;
+            return;
+		}
+
+
+		if(updater->round.roundInfo != FIGHTING){
+		    if(resetLifeBanners) {
+                players[0]->resetLifeBanners();
+                players[1]->resetLifeBanners();
+                resetLifeBanners = false;
+                if(updater->round.numberOfRound != 1)
+                    this->roundCounters[updater->round.winner]->incrementCounter();
+            }
+            roundBanner->updateRoundSprites(updater->round);
+            roundBanner->load(m_Renderer);
+		} else
+		    disableRoundSprites();
+
+
+		timeBanner[0]->digit = updater->firstDigitOfTime;
+		timeBanner[0]->load(m_Renderer);
+		timeBanner[1]->digit = updater->secondDigitOfTime;
+        timeBanner[1]->load(m_Renderer);
+
 
         if (updater->team == 0) {
             players[0]->update(updater, &isSending, 0 == team, tcpClient->nclient);
@@ -436,6 +502,8 @@ void MCGame::update() {
 			players[1]->load(m_Renderer, players[0]->getCentro());
 		}
 
+        music->playBackGroundMusic(clientControls->soundKey);
+        music->updateEffects(updater);
 
         parallaxController->centerLayers(&players[0], &players[1]);
         maxTimeouts = 0 ;
@@ -471,6 +539,29 @@ CharacterClient *MCGame::characterBuild(character_builder_t *builder, int client
                                                   constants->wolverineAncho,
                                                   constants->screenWidth, clientNumber);
             characterClient->setZIndex(constants->zIndexWolverine);
+            break;
+
+        case IRONMAN:
+            characterClient = new IronmanClient(pos,
+                                                  !builder->isFirstTeam,
+                                                  640- 100,
+                                                  480,
+                                                  constants->spidermanSobrante,
+                                                  constants->spidermanAncho,
+                                                  constants->screenWidth, clientNumber);
+            characterClient->setZIndex(constants->zIndexSpiderman);
+            break;
+
+        case RYU:
+            characterClient = new RyuClient(pos,
+                                                  !builder->isFirstTeam,
+                                                  constants->widthSpiderman,
+                                                  constants->heightSpiderman,
+                                                  constants->spidermanSobrante,
+                                                  constants->spidermanAncho,
+                                                  constants->screenWidth, clientNumber);
+            characterClient->setZIndex(constants->zIndexSpiderman);
+            break;
     }
     return characterClient;
 }
@@ -515,10 +606,10 @@ void MCGame::sendMenuEvents() {
         	break;
         }
 
-        if (menuActionToSend == ENTER && numberOfPlayers == 2 && charactersSelected == 0 && !sendOnlyAlive){
+        /*if (menuActionToSend == ENTER && numberOfPlayers == 2 && charactersSelected == 0 && !sendOnlyAlive){
             menuActionToSend = SELECT;
             charactersSelected++;
-        }
+        }*/
         if (menuActionToSend != INVALID_MENU_ACTION && !sendOnlyAlive) {
             tcpClient->socketClient->sendData(&menuActionToSend, sizeof(menuActionToSend));
         }
@@ -528,8 +619,8 @@ void MCGame::sendMenuEvents() {
 
         if (!getRunningThread())
             break;
-        if (menuActionToSend == ENTER)
-            sendOnlyAlive = true;
+        /*if (menuActionToSend == ENTER)
+            sendOnlyAlive = true;*/
         fpsManager.stop();
 
     }
@@ -633,7 +724,7 @@ void MCGame::renderMenu() {
 
 void MCGame::renderMenuBackImage() {
     Texture menuBackImage;
-    menuBackImage.loadFromFile("images/menu/nuevos_cursores/nuevoMenu.png", this->m_Renderer);
+    menuBackImage.loadFromFile("images/menu4/Menu4.png", this->m_Renderer);
     menuBackImage.render(0, 0, 800, 600, m_Renderer);
 }
 
@@ -657,8 +748,11 @@ void MCGame::loadSelectedCharacters() {
     tcpClient->socketClient->reciveData(&currentCharacter0, sizeof(int));
     tcpClient->socketClient->reciveData(&currentCharacter1, sizeof(int));
 
-    players[0]->setCurrentCharacter(currentCharacter0);
-    players[1]->setCurrentCharacter(currentCharacter1);
+    players[0]->setCurrentCharacter(currentCharacter0, m_Renderer);
+    players[1]->setCurrentCharacter(currentCharacter1, m_Renderer);
+
+    players[0]->setBarra(true);
+    players[1]->setBarra(false);
 
     isSending = (this->tcpClient->nclient) == players[team]->getCurrentCharacter()->clientNumber;
 
@@ -670,20 +764,20 @@ void MCGame::setCursors() {
     bool visible;
     for (int i = 0; i < 4; i++) {
         if (i == 0) {
-            posX = 97;
-            posY = 61;
+            posX = 17;
+            posY = 105;
         }
         if (i == 2) {
-            posX = 97;
-            posY = 353;
+            posX = 17;
+            posY = 403;
         }
         if (i == 3) {
-            posX = 449;
-            posY = 353;
+            posX = 602;
+            posY = 403;
         }
         if (i == 1) {
-            posX = 449;
-            posY = 61;
+            posX = 602;
+            posY = 105;
         }
         visible = !(numberOfPlayers == 2 && (i == 1 || i == 3));
 
@@ -707,6 +801,14 @@ bool MCGame::isRunning() {
     return m_Running;
 }
 
+void MCGame::disableRoundSprites() {
+    resetLifeBanners = true;
+    roundBanner->active = false;
+}
 
-
-
+void MCGame::loadMusic()
+{
+	//string nombre = "music/music.wav";
+	this->music->loadMusic();
+	this->music->loadEffects();
+}

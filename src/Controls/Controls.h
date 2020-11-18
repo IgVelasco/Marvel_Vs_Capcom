@@ -8,6 +8,7 @@
 
 #include "../action_constants.h"
 #include "../data_structs.h"
+#include "../Timer.h"
 
 class Controls {
 public:
@@ -16,12 +17,24 @@ public:
     int rightKey;
     int leftKey;
     int changeKey;
+    int punchKey;
+    int kickKey;
+    int blockKey;
+    int throwKey;
+    int gripKey;
+    int punchStrongKey;
+    int kickStrongKey;
+    int soundKey;
+    int debugKey;
 
     actions_t getNewAction();
     menu_action_t getNewMenuAction();
 
 protected:
-    Controls(int upKey, int downKey, int rightKey, int leftKey, int changeKey);
+    Controls(int upKey, int downKey, int rightKey, int leftKey, int changeKey, int punchKey,
+    		int kickKey, int blockKey, int throwKey, int grip, int punchStrong, int kickStrong, int debug, int sound);
+
+    Timer *timer;
 };
 
 

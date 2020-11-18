@@ -11,8 +11,8 @@
 #include "../Texture/Texture.h"
 #include "../InputTable.h"
 #include "../InputManager.h"
-#include "../tools/ImageLoader/ImageLoader.h"
 #include "../Controls/Controls.h"
+#include "ProjectileClient.h"
 #include "../tools/logger/Logger.h"
 #include "../action_constants.h"
 #include "../Renderizable.h"
@@ -34,14 +34,14 @@ public:
     //Takes key presses and adjusts the character's velocity
 //	void handleEvent(SDL_Event &e, SDL_Renderer* renderer, int distance);
     //Shows the character on the screen
-
-    void render(SDL_Renderer *mRenderer, int camX, int camY, int posContrincante);
+    ProjectileClient* getProjectile();
+    virtual void render(SDL_Renderer *mRenderer, int camX, int camY, int posContrincante);
     int getPosX();
     int getPosY();
     int getWidth();
     int getSobrante();
     int getCentro();
-    actions_t getNewAction();
+
     void positionUpdate(int *x);
     void setControls(Controls *controls);
     void startIntro();
@@ -55,8 +55,25 @@ public:
 
     int clientNumber;
 
+    int currentSprite;
+
+    bool getDirection();
 
     void update(character_updater_t *ptr);
+
+    virtual void loadBanner(SDL_Renderer *renderer) = 0;
+
+    void renderBanner(SDL_Renderer *mRenderer, bool isCurrent);
+    virtual void renderVictoryPose(SDL_Renderer *mRenderer, int posX) = 0;
+
+    Texture characterLeftCurrentBanner;
+    Texture characterRightCurrentBanner;
+    Texture characterLeftSecondaryBanner;
+    Texture characterRightSecondaryBanner;
+
+    ProjectileClient* projectile;
+
+    int vida;
 
 protected:
     CharacterClient(int mPosX, int mPosY, int width, int sobrante, bool isLookingLeft, int widthSprite,
@@ -74,18 +91,20 @@ protected:
 
     int anchoPantalla;
 
-    string characterFilepath;
+    string characterFilePath;
 
     Texture m_Texture;
-    ImageLoader *loader;
+    Texture victoryTexture;
 
-    int currentSprite;
+
+    ImageLoader *loader;
 
     Controls *characterControls;
 
     unsigned int lastTime;
 
   //  int mVelX, mVelY;
+
 
 };
 

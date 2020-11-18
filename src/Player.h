@@ -10,7 +10,10 @@
 #include "Controls/Controls.h"
 #include "tools/logger/Logger.h"
 #include "data_structs.h"
+#include "CharactersClient/ProjectileClient.h"
 #include <mutex>
+#include "Barra.h"
+#include "Music.h"
 
 
 class Player: public Renderizable {
@@ -35,17 +38,30 @@ public:
     int getCentro();
     int getZIndex();
 
+    void setBarra(bool left);
+
     void load(SDL_Renderer *pRenderer, int posContrincante);
 
+    void renderBanner(SDL_Renderer *mRenderer);
 
-    void setCurrentCharacter(int i);
+
+    void setCurrentCharacter(int i, SDL_Renderer *renderer);
     std::mutex m;
+
+    void renderProyectiles(SDL_Renderer *mRenderer, int camX, int camY);
+
+    void resetLifeBanners();
+
+    void renderWinners(SDL_Renderer *mRenderer);
 
 private:
     CharacterClient* currentCharacter;
     CharacterClient* firstCharacter;
     CharacterClient* secondCharacter;
     Controls* controls;
+    Barra* barraCurrent;
+    Barra* barraSecondary;
+    int vidaSecondary;
 
     void changeCharacter();
     void setCharacterToChanging();

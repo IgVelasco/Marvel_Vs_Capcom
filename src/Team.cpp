@@ -6,27 +6,31 @@
  */
 
 #include "Team.h"
-#include "CharactersServer/SpidermanServer.h"
-#include "CharactersServer/WolverineServer.h"
+#include "CharactersServer/Characters/SpidermanServer.h"
+#include "CharactersServer/Characters/WolverineServer.h"
 
 const int MAX_PLAYERS = 4;
 
 Team::Team(int teamSize) {
 	this->sizeOfTeam = teamSize;
+	this->roundsWon = 0;
 }
 
 void Team::changeCharacter() {
 	int updateX = currentCharacter->getCentro();
+	currentCharacter->getProjectile()->deactivate();
+
 
 	if (currentCharacter == firstCharacter) {
 		currentCharacter = secondCharacter;
 	} else {
-		currentCharacter = firstCharacter;
+        currentCharacter = firstCharacter;
 	}
 	currentCharacter->positionUpdate(&updateX);
+	currentCharacter->updateBox();
 }
 
-void Team::update(int distance, int posContrincante, actions_t action) {
+void Team::update(int distance, actions_t action, Box *boxContrincante) {
 
 	if (action == DISCONNECTEDCLIENT) {
 		disconnectClient();
@@ -36,7 +40,7 @@ void Team::update(int distance, int posContrincante, actions_t action) {
 	    connectClient();
 	}
 
-	if (action == CHANGEME && currentCharacter->currentAction == STANDING) {
+	if ((action == CHANGEME || action == CHANGEME_ONEPLAYER) && currentCharacter->currentAction == STANDING) {
         changeCharacter();
 		if (sizeOfTeam == 2) {
 			this->clientActive = currentCharacter->clientNumber;
@@ -45,9 +49,16 @@ void Team::update(int distance, int posContrincante, actions_t action) {
 		this->currentCharacter->currentAction = MAKINGINTRO;
     }
 
-	if (!(currentCharacter->currentAction == MAKINGINTRO));
+	/// Remove comment to see contact or test
+	/*if(currentCharacter->getColisionable()->isColliding(boxContrincante) && !currentCharacter->inTheGround()){
+        cout << " mi caja " << currentCharacter->getColisionable()->getTop() << " and " << currentCharacter->getColisionable()->getBottom() << endl;
+        cout << " su caja " << boxContrincante->getTop() << " and " << boxContrincante->getBottom() << endl;
+	}*/
 
-	currentCharacter->update(distance, posContrincante, action);
+
+    //cout << (currentCharacter->getColisionable()->isColliding(boxContrincante) ? "CONTACT BIATCH" : "NO") << endl;
+
+	currentCharacter->update(distance, boxContrincante->getCenter(), action, boxContrincante);
 }
 
 void Team::disconnectClient() {
@@ -62,25 +73,22 @@ void Team::disconnectClient() {
 	this->sizeOfTeam--;
 }
 
-CharacterServer* Team::get_currentCharacter() {
+CharacterServer* Team::getCurrentCharacter() {
 	return this->currentCharacter;
 }
 
 bool Team::invalidIntroAction() {
 	actions_t action = currentCharacter->currentAction;
 
-	return ((action == JUMPINGLEFT) || (action == JUMPINGRIGHT)
-			|| (action == JUMPINGVERTICAL) || (action == DUCK)
-			|| (action == MOVINGRIGHT) || (action == MOVINGLEFT)
-			|| (action == WALKBACK));
+	return !(action == STANDING || action == CHANGEME || action == MAKINGINTRO);
 }
 
-CharacterServer * Team::get_firstCharacter() {
+CharacterServer * Team::getFirstCharacter() {
 	return this->firstCharacter;
 
 }
 
-CharacterServer * Team::get_secondCharacter() {
+CharacterServer * Team::getSecondCharacter() {
 	return this->secondCharacter;
 }
 
@@ -108,16 +116,63 @@ void Team::setCharacters(CharacterServer *firstCharact, CharacterServer *secondC
 
 }
 
-void Team::setSecondClientAsActive() {
-    clientActive = secondCharacter->clientNumber;
-
-}
-
-void Team::setFirstClientAsActive() {
-    clientActive = firstCharacter->clientNumber;
-}
-
 void Team::connectClient() {
     this->sizeOfTeam++;
     this->setClientNumberToCurrentClient();
 }
+
+bool Team::collidesWith(Team *enemyTeam) {
+    if (currentCharacter->isProjectileActive()) {
+        return enemyTeam->getCurrentCharacter()->getColisionable()->isProjectileColliding(
+                getCurrentCharacter()->getProjectile());
+    }
+    return this->currentCharacter->getColisionable()->isColliding(enemyTeam->currentCharacter->getColisionable());
+}
+
+Box *Team::getCurrentBox() {
+    return  currentCharacter->getColisionable();
+}
+
+float Team::getSumOfLife() {
+    return firstCharacter->life + secondCharacter->life;
+}
+
+bool Team::partnerNotDead() {
+    if(currentCharacter == firstCharacter)
+        return secondCharacter->life > 0;
+    else
+        return firstCharacter->life > 0;
+}
+
+bool Team::areBothCharactersDead() {
+    return firstCharacter->life <= 0 && secondCharacter->life <= 0;
+}
+
+void Team::resetCharacterLife() {
+    firstCharacter->life = 100;
+    secondCharacter->life = 100;
+}
+
+float Team::lifeOfCharacterInactive() {
+    if(currentCharacter == firstCharacter)
+        return secondCharacter->life;
+    else
+        return firstCharacter->life;
+}
+
+void Team::incrementRoundsWon() {
+    this->roundsWon++;
+}
+
+int Team::getRoundsWon() {
+    return this->roundsWon;
+}
+
+CharacterServer *Team::getCharacterInactive() {
+    if(currentCharacter == firstCharacter)
+        return secondCharacter;
+    else
+        return firstCharacter;
+}
+
+

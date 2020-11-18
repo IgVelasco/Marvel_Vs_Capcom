@@ -8,7 +8,7 @@
 #ifndef TEAM_H_
 #define TEAM_H_
 
-#include "CharactersServer/CharacterServer.h"
+#include "CharactersServer/Characters/CharacterServer.h"
 #include "Socket.h"
 
 class Team
@@ -17,6 +17,8 @@ private:
 	CharacterServer* currentCharacter;//me falta ver esto y otras cosas
 	CharacterServer* firstCharacter; //personaje del clienteA (cada personaje tiene un cliente)
 	CharacterServer* secondCharacter; //personaje del clienteB
+
+	unsigned int roundsWon;
 
     //numberOfClientsActive
 
@@ -31,11 +33,11 @@ public:
 
     void changeCharacter();
 
-    void update(int distance, int posContrincante, actions_t action);
+    void update(int distance, actions_t action, Box *boxContrincante);
 
     void disconnectClient();
 
-    CharacterServer* get_currentCharacter();
+    CharacterServer* getCurrentCharacter();
 
     bool invalidIntroAction();
 
@@ -43,9 +45,9 @@ public:
 
 	void manageDisconection(int clientSocket);
 
-    CharacterServer * get_firstCharacter();
+    CharacterServer * getFirstCharacter();
 
-    CharacterServer * get_secondCharacter();
+    CharacterServer * getSecondCharacter();
 
     void setSize(int size);
 
@@ -55,11 +57,27 @@ public:
 
     void setCharacters(CharacterServer *firstCharact, CharacterServer *secondCharact);
 
-    void setSecondClientAsActive();
-
-    void setFirstClientAsActive();
-
     void connectClient();
+
+    bool collidesWith(Team *enemyTeam);
+
+    Box *getCurrentBox();
+
+    float getSumOfLife();
+
+    bool partnerNotDead();
+
+    bool areBothCharactersDead();
+
+    void resetCharacterLife();
+
+    float lifeOfCharacterInactive();
+
+    void incrementRoundsWon();
+
+    int getRoundsWon();
+
+    CharacterServer *getCharacterInactive();
 };
 
 

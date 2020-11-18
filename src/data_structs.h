@@ -25,7 +25,9 @@ typedef struct{
 typedef enum character_number{
 	NOT_VALID = -1,
 	SPIDERMAN = 0,
-	WOLVERINE = 1
+	WOLVERINE = 1,
+	IRONMAN = 2,
+	RYU = 3
 } character_number_t;
 
 
@@ -38,15 +40,40 @@ typedef struct{
     bool isFirstTeam;
 } character_builder_t;
 
+typedef struct {
+    round_action_t roundInfo;
+    int winner;
+    int numberOfRound;
+} round_info_t;
+
 typedef struct{
 	int posX;
 	int posY;
 	int currentSprite;
 	actions_t action;
+	music_action_t effect;
 	int team;
 	int client;
+	int vida;
+
+	//projectile info;
+	actions_t projectile;
+	int currentProjectileSprite;
+	int pposX;
+	int pposY;
+
 	bool gameFinishedByDisconnections;
+
+	bool gameFinishedByWinningTeam;
+	int winningTeam;
+
+	//round info
+	round_info_t round;
+    int firstDigitOfTime;
+    int secondDigitOfTime;
 } character_updater_t;
+
+
 
 
 //centro de 2 currentPlayers
@@ -109,6 +136,9 @@ typedef struct {
     int players;
 
 } initializer_t;
+
+
+
 
 
 

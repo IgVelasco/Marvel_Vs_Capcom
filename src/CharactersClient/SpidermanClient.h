@@ -15,6 +15,9 @@ public:
                     int anchoPantalla, int numOfClient);
     ~SpidermanClient();
     void load(SDL_Renderer *renderer, int posContrincante);
+    void loadBanner(SDL_Renderer *renderer);
+
+    void renderVictoryPose(SDL_Renderer *mRenderer, int posX);
 };
 
 

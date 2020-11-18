@@ -23,11 +23,13 @@ C_DEPS :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
-src/CharactersClient \
-src/CharactersServer \
-src/Client \
 src \
+src/CharactersClient \
+src/CharactersServer/Characters \
+src/CharactersServer/Projectiles \
+src/Client \
 src/Controls \
+src/Menu \
 src/Texture \
 src/tools/FPSManager \
 src/tools/ImageLoader \

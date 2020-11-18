@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+    cmake_minimum_required(VERSION 3.10.2)
 project(marvel_vs_capcom)
 
 
@@ -41,18 +41,18 @@ set(SOURCE_FILES
         src/Socket.h
         src/Client/TCPClient.cpp
         src/Client/TCPClient.h
-        src/CharactersServer/CharacterServer.cpp
-        src/CharactersServer/CharacterServer.h
+        src/CharactersServer/Characters/CharacterServer.cpp
+        src/CharactersServer/Characters/CharacterServer.h
         src/CharactersClient/CharacterClient.cpp
         src/CharactersClient/CharacterClient.h
         src/CharactersClient/SpidermanClient.cpp
         src/CharactersClient/SpidermanClient.h
         src/CharactersClient/WolverineClient.cpp
         src/CharactersClient/WolverineClient.h
-        src/CharactersServer/SpidermanServer.cpp
-        src/CharactersServer/SpidermanServer.h
-        src/CharactersServer/WolverineServer.cpp
-        src/CharactersServer/WolverineServer.h
+        src/CharactersServer/Characters/SpidermanServer.cpp
+        src/CharactersServer/Characters/SpidermanServer.h
+        src/CharactersServer/Characters/WolverineServer.cpp
+        src/CharactersServer/Characters/WolverineServer.h
         src/Team.h
         src/Team.cpp
         src/action_constants.h
@@ -60,24 +60,79 @@ set(SOURCE_FILES
         src/ClientCursor.h
         src/ServerCursor.cpp
         src/ServerCursor.h
-        src/signal_handler.cpp src/signal_handler.h)
+        src/signal_handler.cpp src/signal_handler.h
+        src/Box.cpp
+        src/Box.h
+        src/Menu/Menu.h
+        src/Menu/Menu.cpp
+        src/Menu/MenuTwoPlayers.cpp
+        src/Menu/MenuTwoPlayers.h
+        src/Menu/MenuFourPlayers.cpp
+        src/Menu/MenuFourPlayers.h
+        src/Menu/MenuThreePlayers.cpp
+        src/Menu/MenuThreePlayers.h
+        src/EventHandler.cpp
+        src/EventHandler.h
+        src/CharactersServer/Projectiles/ProjectileServer.cpp
+        src/CharactersServer/Projectiles/ProjectileServer.h
+        src/CharactersClient/ProjectileClient.cpp
+        src/CharactersClient/ProjectileClient.h
+        src/Timer.cpp
+        src/Timer.h
+        src/RoundBanner.cpp
+        src/RoundBanner.h
+        src/TimeBanner.cpp
+        src/TimeBanner.h
+        src/CharactersServer/Characters/IronmanServer.cpp
+        src/CharactersServer/Characters/IronmanServer.h
+        src/CharactersServer/Characters/RyuServer.cpp
+        src/CharactersServer/Characters/RyuServer.h
+        src/CharactersClient/RyuClient.cpp
+        src/CharactersClient/RyuClient.h
+        src/CharactersClient/IronmanClient.cpp
+        src/CharactersClient/IronmanClient.h
+        src/Barra.cpp
+        src/Barra.h
+        src/CharactersServer/Projectiles/ProjectileSpidermanServer.cpp
+        src/CharactersServer/Projectiles/ProjectileSpidermanServer.h
+        src/CharactersServer/Projectiles/ProjectileIronmanServer.cpp
+        src/CharactersServer/Projectiles/ProjectileIronmanServer.h
+        src/CharactersServer/Projectiles/ProjectileRyuServer.cpp
+        src/CharactersServer/Projectiles/ProjectileRyuServer.h
+        src/CharactersClient/ProjectileIronmanClient.cpp
+        src/CharactersClient/ProjectileIronmanClient.h
+        src/CharactersClient/ProjectileRyuClient.cpp
+        src/CharactersClient/ProjectileRyuClient.h
+        src/CharactersClient/ProjectileSpidermanClient.cpp
+        src/CharactersClient/ProjectileSpidermanClient.h
+        src/CharactersClient/ProjectileWolverineClient.cpp
+        src/CharactersClient/ProjectileWolverineClient.h
+        src/CharactersServer/Projectiles/ProjectileWolverineServer.cpp
+        src/CharactersServer/Projectiles/ProjectileWolverineServer.h
+        src/Music.cpp
+        src/Music.h
+
+        src/RoundCounter.cpp src/RoundCounter.h)
 
 
 
 
 
 # includes cmake/FindSDL2.cmake
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake-build-debug/CMakeFiles/marvel_vs_capcom.dir)
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake-findsdls)
 
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
+find_package(SDL2_mixer REQUIRED)
 
 include_directories(${SDL2_INCLUDE_DIR}
-        ${SDL2_IMAGE_INCLUDE_DIR})
+        ${SDL2_IMAGE_INCLUDE_DIR}
+        ${SDL2_MIXER_INCLUDE_DIR})
 
 
 
-add_executable(marvel_vs_capcom ${SOURCE_FILES})
+add_executable(marvel_vs_capcom ${SOURCE_FILES} src/Menu/MenuThreePlayers.cpp src/Menu/MenuThreePlayers.h)
 target_link_libraries(marvel_vs_capcom ${SDL2_LIBRARY}
-        ${SDL2_IMAGE_LIBRARIES})
+        ${SDL2_IMAGE_LIBRARIES}
+        ${SDL2_MIXER_LIBRARIES})
 

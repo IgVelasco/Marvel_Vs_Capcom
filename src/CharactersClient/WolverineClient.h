@@ -8,6 +8,7 @@
 #include <SDL2/SDL_events.h>
 #include "../Texture/Texture.h"
 #include "./CharacterClient.h"
+#include "ProjectileWolverineClient.h"
 
 class WolverineClient final: public CharacterClient {
 public:
@@ -16,6 +17,9 @@ public:
                     int anchoPantalla, int numOfClient);
 
     void load(SDL_Renderer *renderer, int posContrincante);
+    void loadBanner(SDL_Renderer *renderer);
+
+    void renderVictoryPose(SDL_Renderer *mRenderer, int posX);
 };
 
 #endif //MARVEL_VS_CAPCOM_WOLVERINECLIENT_H

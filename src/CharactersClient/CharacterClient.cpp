@@ -22,7 +22,7 @@ CharacterClient::CharacterClient(int mPosX, int mPosY, int width, int sobrante, 
     this->heightSprite = heightSprite;
     this->ZIndex = 0;
     this->anchoPantalla = anchoPantalla;
-    this->characterFilepath = "";
+    this->characterFilePath = "";
     this->currentSprite = 0;
     this->isLookingLeft = isLookingLeft;
     currentAction = STANDING;
@@ -32,20 +32,33 @@ CharacterClient::CharacterClient(int mPosX, int mPosY, int width, int sobrante, 
     this->characterControls = NULL;
 
     this->lastTime = SDL_GetTicks();
-
-}
-
-// Public:
-actions_t CharacterClient::getNewAction() {
+    this->vida = 100;
 
 }
 
 void CharacterClient::render(SDL_Renderer *mRenderer, int camX, int camY, int posContrincante) {
     isLookingLeft = this->getCentro() > posContrincante;
-    m_Texture.render(mPosX - camX, mPosY - camY, widthSprite, heightSprite,
+    m_Texture.render(mPosX - camX + 260, mPosY - camY + 180, 640, 480,
                      mRenderer); //esto es los valores que se cambian la resolucion
 }
 
+void CharacterClient::renderBanner(SDL_Renderer *mRenderer, bool isCurrent)
+{
+	if(clientNumber == 0 || clientNumber == 1)
+	{
+		if(isCurrent)
+			characterLeftCurrentBanner.render(0,41,348,73,mRenderer);
+		else
+			characterLeftSecondaryBanner.render(0,41,348,73,mRenderer);
+	}
+	else
+	{
+		if(isCurrent)
+			characterRightCurrentBanner.render(452,41,348,73,mRenderer);
+		else
+			characterRightSecondaryBanner.render(452,41,348,73,mRenderer);
+	}
+}
 
 int CharacterClient::getPosX() {
     return mPosX;
@@ -72,6 +85,10 @@ int CharacterClient::getCentro() {
 CharacterClient::~CharacterClient() {
     delete loader;
     m_Texture.free();
+    characterLeftCurrentBanner.free();
+    characterRightCurrentBanner.free();
+    characterLeftSecondaryBanner.free();
+    characterRightSecondaryBanner.free();
 }
 
 void CharacterClient::positionUpdate(int *x) {
@@ -95,7 +112,13 @@ Controls *CharacterClient::getControls() {
 bool CharacterClient::isMoving() {
 	return !((this->currentAction == STANDING) || (this->currentAction == DUCK)
 			|| (this->currentAction == JUMPINGVERTICAL) || (this->currentAction == MAKINGINTRO)
-			|| (this->currentAction == CHANGEME));
+			|| (this->currentAction == CHANGEME) || (this->currentAction == KICK)
+			|| (this->currentAction == PUNCH) || (this->currentAction == PUNCHDOWN)
+			|| (this->currentAction == KICKDOWN) || (this->currentAction == BLOCK)
+			|| (this->currentAction == THROWPOWER) || (this->currentAction == GRIP)
+			|| (this->currentAction == FALLING) || (this->currentAction == THROW)
+			|| (this->currentAction == PUNCHSTRONG) || (this->currentAction == PUNCHSTRONGDOWN)
+			|| (this->currentAction == KICKSTRONG) || (this->currentAction == KICKSTRONGDOWN));
 }
 
 int CharacterClient::getZIndex() {
@@ -107,7 +130,7 @@ void CharacterClient::setZIndex(int z) {
 }
 
 void CharacterClient::setFilepath(string fp) {
-    this->characterFilepath = fp;
+    this->characterFilePath = fp;
 }
 
 void CharacterClient::update(character_updater_t *updater) {
@@ -116,9 +139,14 @@ void CharacterClient::update(character_updater_t *updater) {
     mPosX = updater->posX;
     mPosY = updater->posY;
     currentSprite = updater->currentSprite;
+    vida = updater->vida;
 }
 
 
-
-
+bool CharacterClient::getDirection() {
+    return isLookingLeft;
+}
+ProjectileClient *CharacterClient::getProjectile() {
+    return projectile;
+}
 
